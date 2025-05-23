@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- jQuery (Bootstrap requires jQuery) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <title>Admin Dashboard - Movies</title>
+</head>
+<body>
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div th:replace="~{/admin/fragments/sidebar :: sidebar}"></div>
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper" class="col-md-10 ml-sm-auto col-lg-10 px-md-4">
+        <div class="">
+            <div class="d-flex p-3 justify-content-between align-items-center">
+                <h4>Tổng số phim : <span th:text="${countMovie}"></span></h4>
+<!--                data-toggle="modal" data-target="#addMovieModal"-->
+                <a href="http://localhost:8080/admin/movies/addPage" class="btn btn-primary" >Thêm mới ></a>
+            </div>
+
+            <div class="d-flex">
+                <input type="text" class="form-control" id="search" placeholder="Tìm kiếm tên phim" onkeyup="searchMovieName()">
+                <input type="number" class="form-control" id="filterYear" placeholder="Năm phát hành" onkeyup="searchMovieName()">
+                <select class="form-control" id="filterType" onchange="searchMovieName()">
+                    <option value="">Chọn thể loại</option>
+                    <span th:each="type : ${types}">
+                        <option th:text="${type?.type_name ?: 'N/A'}"></option>
+                    </span>
+                </select>
+                <select class="form-control" id="filterCategory" onchange="searchMovieName()">
+                    <option value="">Chọn danh mục</option>
+                    <span th:each="category : ${categories}">
+                        <option th:text="${category?.name ?: 'N/A'}"></option>
+                    </span>
+                </select>
+                <select class="form-control" id="filterCountry" onchange="searchMovieName()">
+                    <option value="">Chọn quốc gia</option>
+                    <span th:each="country : ${countries}">
+                        <option th:text="${country?.name ?: 'N/A'}"></option>
+                    </span>
+                </select>
+                <!-- làm mới -->
+                <button class="btn btn-primary flex-1" onclick="window.location.reload()">Làm mới</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Ảnh bìa</th>
+                        <th>Tiêu đề</th>
+                        <th>Mô tả</th>
+                        <th>Năm phát hành</th>
+                        <th>Thể loại</th>
+                        <th>Danh mục</th>
+                        <th>Quốc gia</th>
+                        <th>Phim (trailer)</th>
+                        <th>Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody id="movieNameTableBody">
+                    <tr th:each="movie, status : ${movies}">
+                        <td th:text="${status.index + 1}"></td>
+                        <td>
+                            <img class="movie-thumb" th:src="${movie.thumb_url}" alt="Thumbnail" style="max-width: 100px;" />
+                        </td>
+
+                        <td class="movie-title" style="display: block;width: 100px;">
+                            <div>
+                                <span th:text="${movie.title}"></span>
+                                <span th:if="${movie.titleByLanguage != null}">
+                                    <span> - </span>
+                                    <span th:text="${movie.titleByLanguage}" class="text-secondary"></span>
+                                </span>
+                            </div>
+<!--                            <div th:if="${movie.totalEpisodes > 1}">-->
+<!--                                <span th:text="'Episodes: ' + ${movie.totalEpisodes}"></span>-->
+<!--                                <span th:text="'Average Duration: ' + ${movie.getAverageDuration()} + ' mins'"></span>-->
+<!--                            </div>-->
+                        </td>
+                        <td class="description">
+                            <div>
+                                <span class="text-primary">Đạo diễn: </span>
+                                <span class="movie-director" th:text="${movie.director}"></span>
+                            </div>
+                            <div>
+                                <span class="text-primary">Diễn viên: </span>
+                                <span class="movie-actors" th:text="${movie.actors}"></span>
+                            </div>
+                            <div>
+                                <span class="text-primary">Nội dung chi tiết: </span>
+                                <span class="movie-description" th:utext="${#strings.abbreviate(movie.description, 50)}"
+                                      data-toggle="tooltip" title="${movie.description}"></span>
+                            </div>
+                            <div>
+                                <span class="text-primary">Trạng thái: </span>
+                                <span class="movie-status" th:text="${movie.status}"></span>
+                            </div>
+                            <div th:if="${movie.totalEpisodes != null && movie.totalEpisodes > 0}">
+                                <span class="text-primary">Số tập: </span>
+                                <span class="movie-episodes" th:text="${movie.totalEpisodes}"></span>
+                                <a href="#" th:onclick="'openEpisodeModal(' + ${movie.movie_id} + ')'">Xem chi tiết các tập</a>
+                            </div>
+
+                            <div>
+                                <span class="text-primary">Thời lượng: </span>
+                                <span class="movie-duration" th:text="${movie.duration}"></span>
+                            </div>
+                            <div>
+                                <span class="text-primary">Chất lượng: </span>
+                                <span class="movie-quality" th:text="${movie.quality}"></span>
+                            </div>
+
+                            <div>
+                                <span class="text-primary">Vietsub: </span>
+                                <span th:if="${movie.vietSub}" class="text-success">Có</span>
+                                <span th:unless="${movie.vietSub}" class="text-danger">Không</span>
+                            </div>
+                            <div>
+                                <a href="#" th:onclick="'openDetailMovieModal(' + ${movie.movie_id} + ')'">Chi tiết mô tả</a>
+                            </div>
+
+                        </td>
+                        <td style="display: block;width: 150px;" th:text="${movie.release_year}" class="text-center movie-year"></td>
+                        <td>
+                            <ul class="list-unstyled">
+                                <li th:each="type : ${movie.movieTypes}">
+                                    <span style="width: 75px;margin: 2px" class="btn btn-info btn-sm movie-types" th:text="${type?.type_name ?: 'N/A'}"></span>
+                                </li>
+                            </ul>
+                        </td>
+                        <td>
+                            <ul class="list-unstyled">
+                                <li th:each="category : ${movie.movieCategories}">
+                                    <span style="width: 75px;margin: 2px" class="btn btn-secondary btn-sm movie-categories" th:text="${category?.name ?: 'N/A'}"></span>
+                                </li>
+                            </ul>
+                        </td>
+                        <td class="movie-country" style="width: 140px;" th:text="${movie.country != null ? movie.country.name : 'N/A'}"></td>
+                        <td style="display: block;width: 160px;word-wrap: anywhere" >
+                            <a class="movie-link" th:href="${movie.link}" target="_blank">Phát - </a>
+<!--                            <iframe th:src="${movie.link}" width="200" height="200" frameborder="0" allowfullscreen="true" scrolling="no" ></iframe>-->
+
+                            <div>
+                                <a href="#" th:data-trailer="${movie.getEmbedLink()}" onclick="openModalTrailer(this.getAttribute('data-trailer'))">(trailer)</a>
+                                <!--                                <iframe th:src="${movie.getEmbedLink()}" width="150" height="150" frameborder="0" allowfullscreen="true" scrolling="no"></iframe>-->
+                            </div>
+                        </td>
+                        <td style="gap: 10px;">
+                            <!-- Nút Sửa  , th:onclick="'openEditModal(' + ${movie.movie_id} + ')' "-->
+                            <a class="btn btn-warning"
+                               th:href="@{'/admin/movies/update/' + ${movie.movie_id}}"
+                               style="width: 120px; margin: 2px;">Sửa</a>
+                            <a class="btn btn-danger" th:href="@{'/admin/movies/delete/' + ${movie.movie_id}}"
+                               style="width: 120px; margin: 2px;">Xóa</a>
+                            <a class="btn btn-primary" style="width: 120px; margin: 2px;" th:href="@{'/admin/movies/detail/' + ${movie.movie_id}}" >Xem chi tiết</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                            <a class="page-link" th:href="@{/admin/movies(page=${currentPage - 1}, size=${size})}">Previous</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${i == currentPage} ? 'active'">
+                            <a class="page-link" th:href="@{/admin/movies(page=${i}, size=${size})}" th:text="${i + 1}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? 'disabled'">
+                            <a class="page-link" th:href="@{/admin/movies(page=${currentPage + 1}, size=${size})}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detailMovieModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">Chi tiết phim</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <h3>Chi tiết phim</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Episode Details Modal -->
+<div class="modal fade" id="episodeModal" tabindex="-1" aria-labelledby="episodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="episodeModalLabel">Chi tiết các tập</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+<!--                <div>-->
+<!--                    <h3>Chi tiết phim</h3>-->
+<!--                </div>-->
+                <ul id="episodeList" class="list-group">
+                    <!-- Episode links will be dynamically added here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trailer Modal -->
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-labelledby="trailerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trailerModalLabel">Trailer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <iframe id="trailerIframe" width="100%" height="400" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Movie Modal -->
+
+<!--<div class="modal fade" id="addMovieModal" tabindex="-1" role=" dialog">-->
+<!--    <div class="modal-dialog" role="document">-->
+<!--        <div class="modal-content">-->
+<!--            <div class="modal-header">-->
+<!--                <h5 class="modal-title">Thêm phim mới </h5>-->
+<!--                <button type="button" class="close" data-dismiss="modal" aria-label="Close">-->
+<!--                    <span aria-hidden="true">&times;</span>-->
+<!--                </button>-->
+<!--            </div>-->
+<!--            <div class="modal-body">-->
+<!--                <form th:action="@{/admin/movies/add}" th:object="${movie}" method="post">-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="title">Tiêu đề:</label>-->
+<!--                        <input type="text" class="form-control" id="title" th:field="*{title}" />-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="description">Mô tả:</label>-->
+<!--                        <textarea class="form-control" id="description" th:field="*{description}" maxlength="65535"></textarea>-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="release_year">Năm phát hành:</label>-->
+<!--                        <input type="number" value="2000" class="form-control" id="release_year" min="1900" max="2100" th:field="*{release_year}" />-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="movieTypes" class="d-block">Thể loại:</label>-->
+<!--                        <select class="form-control" style="width: 100%" id="movieTypes" name="movieTypeIds" multiple>-->
+<!--                            <option th:each="type : ${types}" th:value="${type.movie_type_id}" th:text="${type.type_name}"></option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="category" class="d-block">Danh mục:</label>-->
+<!--                        <select class="form-control " style="width: 100%" id="category" name="categoryIds" multiple>-->
+<!--                            <option th:each="category : ${categories}" th:value="${category.category_id}" th:text="${category.name}"></option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="country">Quốc gia:</label>-->
+<!--                        <select class="form-control" id="country" name="countryId">-->
+<!--                            <option th:each="country : ${countries}" th:value="${country.country_id}" th:text="${country.name}"></option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="thumb_url">Ảnh bìa:</label>-->
+<!--                        <input type="text" class="form-control" id="thumb_url" th:field="*{thumb_url}" />-->
+<!--                    </div>-->
+<!--                    <div class="form-group">-->
+<!--                        <label for="link_url">Đường dẫn:</label>-->
+<!--                        <input type="text" class="form-control" id="link_url" th:field="*{link}" />-->
+<!--                    </div>-->
+<!--                    <button type="submit" class="btn btn-primary">Thêm</button>-->
+<!--                </form>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!-- Edit Movie Modal -->
+<div class="modal fade" id="editMovieModal" tabindex="-1" aria-labelledby="editMovieModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMovieModalLabel">Edit Movie</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editMovieForm">
+                    <div class="mb-3">
+                        <label for="movieTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="movieTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="movieDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="movieDescription" name="description" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="releaseYear" class="form-label">Release Year</label>
+                        <input type="text" class="form-control" id="releaseYear" name="release_year" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="movieLink" class="form-label"> Link</label>
+                        <input type="url" class="form-control" id="movieLink" name="link" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="thumbUrl" class="form-label">Thumbnail URL</label>
+                        <input type="text" class="form-control" id="thumbUrl" name="thumb_url" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCountry" class="form-label">Country</label>
+                        <select class="form-select" id="editCountry" name="countryId" required>
+                            <option value="" disabled selected>Select Country</option>
+                            <option th:each="country : ${countries}" th:value="${country.country_id}" th:text="${country.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMovieTypes" class="form-label">Movie Types</label>
+                        <select class="form-select" id="editMovieTypes" name="movieTypeIds" multiple required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMovieCategories" class="form-label">Movie Categories</label>
+                        <select class="form-select" id="editMovieCategories" name="categoryIds" multiple required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <input type="hidden" id="movieId" name="id">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Initialize Select2 for editing movie
+        $('#editMovieTypes').select2({
+            placeholder: 'Chọn thể loại',
+            allowClear: true
+        });
+
+        $('#editMovieCategories').select2({
+            placeholder: 'Chọn danh mục',
+            allowClear: true
+        });
+
+
+        // window.openEditModal = function(movieId) {
+            // Promise.all([
+            //     fetch(`/api/movies/${movieId}`),
+            //     fetch('/api/countries'), // Lấy danh sách đầy đủ countries
+            //     fetch('/api/types'), // Lấy danh sách đầy đủ movie types
+            //     fetch('/api/categories') // Lấy danh sách đầy đủ movie categories
+            // ])
+            //     .then(async ([movieRes, countriesRes, typesRes, categoriesRes]) => {
+            //         if (!movieRes.ok || !countriesRes.ok || !typesRes.ok || !categoriesRes.ok) {
+            //             throw new Error('Network response was not ok');
+            //         }
+            //
+            //         const movieData = await movieRes.json();
+            //         const countries = await countriesRes.json();
+            //         const movieTypes = await typesRes.json();
+            //         const movieCategories = await categoriesRes.json();
+            //
+            //         // Xử lý dữ liệu
+            //         populateModal(movieData, countries, movieTypes, movieCategories);
+            //     })
+            //     .catch(error => {
+            //         console.error('Error fetching data:', error);
+            //         alert('Lỗi khi tải dữ liệu. Vui lòng thử lại!');
+            //     });
+
+
+            // function populateModal(movieData, countries, movieTypes, movieCategories) {
+            //     // Điền dữ liệu vào các trường
+            //     document.getElementById('movieTitle').value = movieData.title || '';
+            //     document.getElementById('movieDescription').value = movieData.description || '';
+            //     document.getElementById('releaseYear').value = movieData.release_year || '';
+            //     document.getElementById('movieLink').value = movieData.link || '';
+            //     document.getElementById('thumbUrl').value = movieData.thumb_url || '';
+            //     document.getElementById('movieId').value = movieData.movie_id;
+            //
+            //     // Xử lý country
+            //     const countrySelect = document.getElementById('editCountry');
+            //     countrySelect.innerHTML = '<option value="" disabled>Select Country</option>';
+            //     countries.forEach(country => {
+            //         const option = document.createElement('option');
+            //         option.value = country.country_id;
+            //         option.textContent = country.name;
+            //         if (movieData.country && movieData.country.country_id === country.country_id) {
+            //             option.selected = true;
+            //         }
+            //         countrySelect.appendChild(option);
+            //     });
+            //
+            //     // Xử lý movie types
+            //     const movieTypesSelect = document.getElementById('editMovieTypes');
+            //     movieTypesSelect.innerHTML = '';
+            //     movieTypes.forEach(type => {
+            //         const option = document.createElement('option');
+            //         option.value = type.movie_type_id;
+            //         option.textContent = type.type_name;
+            //         if (movieData.movieTypes && movieData.movieTypes.some(t => t.movie_type_id === type.movie_type_id)) {
+            //             option.selected = true;
+            //         }
+            //         movieTypesSelect.appendChild(option);
+            //     });
+            //
+            //     // Xử lý movie categories
+            //     const movieCategoriesSelect = document.getElementById('editMovieCategories');
+            //     movieCategoriesSelect.innerHTML = '';
+            //     movieCategories.forEach(category => {
+            //         const option = document.createElement('option');
+            //         option.value = category.category_id;
+            //         option.textContent = category.name;
+            //         if (movieData.movieCategories && movieData.movieCategories.some(c => c.category_id === category.category_id)) {
+            //             option.selected = true;
+            //         }
+            //         movieCategoriesSelect.appendChild(option);
+            //     });
+            //
+            //     // Hiển thị modal
+            //     const modal = new bootstrap.Modal(document.getElementById('editMovieModal'));
+            //     modal.show();
+            // }
+        // };
+
+            // Handle form submission
+        // document.getElementById('editMovieForm').addEventListener('submit', async function (event) {
+        //     event.preventDefault();
+        //
+        //     // Gather form data
+        //     const formData = new FormData(this);
+        //     // Lấy dữ liệu từ các trường select
+        //     const movieData = Object.fromEntries(formData.entries());
+        //
+        //     // Đảm bảo lấy đúng dữ liệu từ các multiple select
+        //     movieData.movieTypeIds = Array.from(document.getElementById('editMovieTypes').selectedOptions).map(option => option.value);
+        //     movieData.categoryIds = Array.from(document.getElementById('editMovieCategories').selectedOptions).map(option => option.value);
+        //
+        //     // console.log('Movie Data after processing:', movieData);
+        //     // Kiểm tra lại sau khi lấy đúng các giá trị
+        //     // console.log('Updated Movie Types:', movieData.movieTypeIds); // Kiểm tra mảng movieTypeIds
+        //     // console.log('Updated Movie Categories:', movieData.categoryIds); // Kiểm tra mảng categoryIds
+        //
+        //     try {
+        //         // Send PUT request to update movie
+        //         const response = await fetch(`/api/movies/update/${movieData.id}`, {
+        //             method: 'PUT',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify(movieData),
+        //         });
+        //
+        //         if (response.ok) {
+        //             const updatedMovie = await response.json();
+        //             updateMovieInList(updatedMovie); // Function to update UI list
+        //             $('#editMovieModal').modal('hide'); // Close modal
+        //             alert('Cập nhật phim thành công!');
+        //         } else {
+        //             const errorText = await response.text();
+        //             console.error('Update failed:', errorText);
+        //             alert('Cập nhật phim thất bại: ' + errorText);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error submitting update:', error);
+        //         alert('Lỗi khi gửi yêu cầu cập nhật. Vui lòng thử lại!');
+        //     }
+        // });
+
+        // Function to update the movie in the list (example implementation)
+        // function updateMovieInList(updatedMovie) {
+        //     const movieRow = document.querySelector(`#movieRow_${updatedMovie.movie_id}`);
+        //     if (movieRow) {
+        //         // movieRow.querySelector('.id').textContent = updatedMovie.movie_id;
+        //         movieRow.querySelector('.movie-title').textContent = updatedMovie.title;
+        //         movieRow.querySelector('.movie-description').textContent = updatedMovie.description;
+        //         movieRow.querySelector('.movie-year').textContent = updatedMovie.release_year;
+        //         movieRow.querySelector('.movie-country').textContent = updatedMovie.country.name;
+        //         movieRow.querySelector('.movie-link').href = updatedMovie.link;
+        //         movieRow.querySelector('.movie-thumb').src = updatedMovie.thumb_url;
+        //         movieRow.querySelector('.movie-types').innerHTML = updatedMovie.movieTypes.map(t => `<span class="badge bg-info">${t.type_name}</span>`).join('');
+        //         movieRow.querySelector('.movie-categories').innerHTML = updatedMovie.movieCategories.map(c => `<span class="badge bg-secondary">${c.name}</span>`).join('');
+        //     }
+        // }
+    });
+
+    function openModalTrailer(trailerLink) {
+        console.log('Trailer Link:', trailerLink);
+        const trailerIframe = document.getElementById('trailerIframe');
+        if (trailerIframe && trailerLink) {
+            trailerIframe.src = trailerLink;
+            $('#trailerModal').modal('show');
+        } else {
+            alert('Trailer link is not available or iframe element not found');
+        }
+    }
+
+
+    function openEpisodeModal(movieId) {
+        // alert("movieId: ",movieId);
+        fetch(`/api/movies/${movieId}/episodes`)
+            .then(response => response.json())
+            .then(data => {
+                const episodeList = document.getElementById('episodeList');
+                episodeList.innerHTML = '';
+
+                data.forEach((link, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item';
+                    listItem.innerHTML = `<a href="${link}" target="_blank">Tập ${index + 1}</a>`;
+                    episodeList.appendChild(listItem);
+                });
+
+                // Show the modal
+                $('#episodeModal').modal('show');
+            })
+            .catch(error => console.error('Error fetching episode details:', error));
+    }
+
+    function openDetailMovieModal(movieId) {
+        fetch(`/api/movies/${movieId}`)
+            .then(response => response.json())
+            .then(data => {
+                const movieData = data;
+                const modalBody = document.querySelector('#detailMovieModal .modal-body');
+                modalBody.innerHTML = `
+                <div>
+                    <h3>${movieData.title}</h3>
+                </div>
+                <div>
+                    <span class="text-primary">Đạo diễn: </span>
+                    <span>${movieData.director}</span>
+                </div>
+                <div>
+                    <span class="text-primary">Diễn viên: </span>
+                    <span>${movieData.actors}</span>
+                </div>
+                <div>
+                    <span class="text-primary">Nội dung chi tiết: </span>
+                    <span>${movieData.description}</span>
+                </div>
+                <div>
+                    <span class="text-primary">Trạng thái: </span>
+                    <span>${movieData.status}</span>
+                </div>
+
+
+                 <div>
+                    <span class="text-primary">Số tập: </span>
+                    <span>${movieData.totalEpisodes != null ? movieData.totalEpisodes : 1}</span>
+                </div>
+
+
+                <div>
+                    <span class="text-primary">Thời lượng: </span>
+                    <span>${movieData.duration}</span>
+                </div>
+                <div>
+                    <span class="text-primary">Chất lượng: </span>
+                    <span>${movieData.quality}</span>
+                </div>
+                <div>
+                    <span class="text-primary">Vietsub: </span>
+                    <span>${movieData.vietSub ? 'Có' : 'Không'}</span>
+                </div>
+            `;
+
+                // Show the modal
+                $('#detailMovieModal').modal('show');
+            })
+            .catch(error => console.error('Error fetching details:', error));
+    }
+
+    function searchMovieName() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("search");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("movieNameTableBody");
+        tr = table.getElementsByTagName("tr");
+
+        var filterYear = document.getElementById("filterYear").value;
+        var filterType = document.getElementById("filterType").value.toUpperCase();
+        var filterCategory = document.getElementById("filterCategory").value.toUpperCase();
+        var filterCountry = document.getElementById("filterCountry").value.toUpperCase();
+
+        for (i = 0; i < tr.length; i++) {
+            var titleTd = tr[i].getElementsByTagName("td")[2];
+            var yearTd = tr[i].getElementsByTagName("td")[4];
+            var typeTd = tr[i].getElementsByClassName("movie-types")[0];
+            var categoryTd = tr[i].getElementsByClassName("movie-categories")[0];
+            var countryTd = tr[i].getElementsByTagName("td")[7];
+
+            if (titleTd && yearTd && typeTd && categoryTd && countryTd) {
+                var titleTxt = titleTd.textContent || titleTd.innerText;
+                var yearTxt = yearTd.textContent || yearTd.innerText;
+                var typeTxt = typeTd.textContent || typeTd.innerText;
+                var categoryTxt = categoryTd.textContent || categoryTd.innerText;
+                var countryTxt = countryTd.textContent || countryTd.innerText;
+
+                if (titleTxt.toUpperCase().indexOf(filter) > -1 &&
+                    (filterYear === "" || yearTxt.indexOf(filterYear) > -1) &&
+                    (filterType === "" || typeTxt.toUpperCase().indexOf(filterType) > -1) &&
+                    (filterCategory === "" || categoryTxt.toUpperCase().indexOf(filterCategory) > -1) &&
+                    (filterCountry === "" || countryTxt.toUpperCase().indexOf(filterCountry) > -1)) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
