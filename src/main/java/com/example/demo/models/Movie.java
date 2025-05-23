@@ -24,7 +24,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Data
-@ToString
+//@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -67,6 +67,7 @@ public class Movie {
             joinColumns = @JoinColumn(name = "movie_id"),
             inverseJoinColumns = @JoinColumn(name = "movie_type_id")
     )
+    @Builder.Default
     private Set<MovieType> movieTypes = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -75,11 +76,13 @@ public class Movie {
             joinColumns = @JoinColumn(name = "movie_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
+    @Builder.Default
     private Set<Category> movieCategories = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "movie_actors", joinColumns = @JoinColumn(name = "movie_id"))
     @Column(name = "actor")
+    @Builder.Default
     private Set<String> actors = new HashSet<>();
 
     public enum Quality {
