@@ -1,11 +1,4 @@
-/*
-* @ (#) AdminController.java 1.0 12/23/2024
-*
-* Copyright (c) 2024 IUH.All rights reserved
-*/
-
 package com.example.demo.controllers;
-
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,12 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import com.example.demo.models.Admin;
 import com.example.demo.services.AdminService;
 
-/*
- * @description 
- * @author : Nguyen Truong An
- * @date : 12/23/2024
- * @version 1.0
-*/
+
 @Controller
 public class AdminController {
     @Autowired

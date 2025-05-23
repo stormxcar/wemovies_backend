@@ -1,13 +1,5 @@
-/*
- * @ (#) RestController.java 1.0 12/24/2024
- *
- * Copyright (c) 2024 IUH.All rights reserved
- */
-
 package com.example.demo.controllers;
 
-
-import com.example.demo.config.ResourceNotFoundException;
 import com.example.demo.models.*;
 import com.example.demo.repositories.CategoryRepository;
 import com.example.demo.repositories.CountryRepositories;
@@ -20,19 +12,10 @@ import com.example.demo.services.MovieTypeSevice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/*
- * @description
- * @author : Nguyen Truong An
- * @date : 12/24/2024
- * @version 1.0
- */
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 

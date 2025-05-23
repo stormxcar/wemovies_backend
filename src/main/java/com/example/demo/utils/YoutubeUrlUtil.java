@@ -1,5 +1,4 @@
 package com.example.demo.utils;
-
 public class YoutubeUrlUtil {
     public static String extractVideoId(String url) {
         if (url == null || url.isEmpty()) {

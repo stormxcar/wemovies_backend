@@ -1,9 +1,3 @@
-/*
- * @ (#) MovieDto.java 1.0 12/26/2024
- *
- * Copyright (c) 2024 IUH.All rights reserved
- */
-
 package com.example.demo.models;
 
 import lombok.Getter;
@@ -14,12 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/*
- * @description
- * @author : Nguyen Truong An
- * @date : 12/26/2024
- * @version 1.0
- */
+
 @Getter
 @Setter
 public class MovieDto {

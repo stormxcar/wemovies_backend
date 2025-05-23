@@ -1,9 +1,3 @@
-/*
- * @ (#) MovieController.java 1.0 12/23/2024
- *
- * Copyright (c) 2024 IUH.All rights reserved
- */
-
 package com.example.demo.controllers;
 
 import com.example.demo.models.*;
@@ -14,7 +8,6 @@ import com.example.demo.services.MovieTypeSevice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/*
- * @description
- * @author : Nguyen Truong An
- * @date : 12/23/2024
- * @version 1.0
- */
+
 @Controller
 @RequestMapping("/admin/movies")
 public class MovieController {

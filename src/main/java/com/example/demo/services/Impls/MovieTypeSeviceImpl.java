@@ -1,9 +1,3 @@
-/*
- * @ (#) MovieTypeSeviceImpl.java 1.0 12/24/2024
- *
- * Copyright (c) 2024 IUH.All rights reserved
- */
-
 package com.example.demo.services.Impls;
 
 import com.example.demo.models.MovieType;
@@ -14,12 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/*
- * @description
- * @author : Nguyen Truong An
- * @date : 12/24/2024
- * @version 1.0
- */
 @Service
 public class MovieTypeSeviceImpl implements MovieTypeSevice {
     @Autowired

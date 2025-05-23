@@ -1,9 +1,3 @@
-/*
- * @ (#) MovieServiceImpl.java 1.0 12/23/2024
- *
- * Copyright (c) 2024 IUH.All rights reserved
- */
-
 package com.example.demo.services.Impls;
 
 import com.example.demo.config.ResourceNotFoundException;
@@ -22,12 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-/*
- * @description
- * @author : Nguyen Truong An
- * @date : 12/23/2024
- * @version 1.0
- */
+
 @Service
 public class MovieServiceImpl implements MovieService {
     @Autowired
