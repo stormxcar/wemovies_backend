@@ -1,6 +1,6 @@
 package com.example.demo.services.Impls;
 
-import com.example.demo.config.ResourceNotFoundException;
+import com.example.demo.config.root.ResourceNotFoundException;
 import com.example.demo.models.Movie;
 import com.example.demo.repositories.MovieRepository;
 import com.example.demo.services.MovieService;
