@@ -4,6 +4,11 @@ spring:
   datasource:
     url: ${JAWSDB_URL}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5 # Giới hạn tối đa 5 kết nối
+      minimum-idle: 1
+      idle-timeout: 30000 # 30 giây
+      connection-timeout: 20000 # 20 giây
   jpa:
     hibernate:
       ddl-auto: update
