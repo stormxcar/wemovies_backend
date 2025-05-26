@@ -25,6 +25,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // Disable CSRF
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/error").permitAll() // Allow public access to root and error endpoints
                         .requestMatchers("/auth/**").permitAll() // Allow public access to auth endpoints
                         .requestMatchers("/user/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN") // Only allow ADMIN role to access /admin
