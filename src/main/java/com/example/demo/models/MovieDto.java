@@ -1,5 +1,6 @@
 package com.example.demo.models;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@Data
 public class MovieDto {
     private Long id;
     private String title;
@@ -25,6 +27,17 @@ public class MovieDto {
     private List<Long> movieTypeIds = new ArrayList<>();
     private List<Long> categoryIds = new ArrayList<>();
 
+    private String titleByLanguage;
+    private String status;
+    private String totalEpisodes;
+    private String director;
+    private List<String> actors;
+    private String duration;
+    private String quality;
+    private String vietSub;
+    private String hot;
+    private List<String> episodeLinks;
+
     public MovieDto() {
         // Default constructor for JSON deserialization
     }
@@ -32,105 +45,25 @@ public class MovieDto {
     // Constructor to convert Movie to MovieDto
     public MovieDto(Movie movie) {
         if (movie != null) {
-            this.id = movie.getMovie_id();
+            this.id = movie.getId();
             this.title = movie.getTitle();
             this.description = movie.getDescription();
             this.release_year = movie.getRelease_year();
             this.thumb_url = movie.getThumb_url();
             this.trailer = movie.getTrailer();
             this.link = movie.getLink();
-            this.countryId = movie.getCountry() != null ? movie.getCountry().getCountry_id() : null;
+            this.countryId = movie.getCountry() != null ? movie.getCountry().getId() : null;
             this.movieTypeIds = movie.getMovieTypes() != null
                     ? movie.getMovieTypes().stream()
-                    .map(MovieType::getMovie_type_id)
+                    .map(MovieType::getId)
                     .collect(Collectors.toList())
                     : new ArrayList<>();
             this.categoryIds = movie.getMovieCategories() != null
                     ? movie.getMovieCategories().stream()
-                    .map(Category::getCategory_id)
+                    .map(Category::getId)
                     .collect(Collectors.toList())
                     : new ArrayList<>();
         }
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Year getRelease_year() {
-        return release_year;
-    }
-
-    public void setRelease_year(Year release_year) {
-        this.release_year = release_year;
-    }
-
-    public String getThumb_url() {
-        return thumb_url;
-    }
-
-    public void setThumb_url(String thumb_url) {
-        this.thumb_url = thumb_url;
-    }
-
-    public String getTrailer() {
-        return trailer;
-    }
-
-    public void setTrailer(String trailer) {
-        this.trailer = trailer;
-    }
-
-    public String getLink() {
-        return link;
-    }
-
-    public void setLink(String link) {
-        this.link = link;
-    }
-
-    public Long getCountryId() {
-        return countryId;
-    }
-
-    public void setCountryId(Long countryId) {
-        this.countryId = countryId;
-    }
-
-    public List<Long> getMovieTypeIds() {
-        return movieTypeIds;
-    }
-
-    public void setMovieTypeIds(List<Long> movieTypeIds) {
-        this.movieTypeIds = movieTypeIds;
-    }
-
-    public List<Long> getCategoryIds() {
-        return categoryIds;
-    }
-
-    public void setCategoryIds(List<Long> categoryIds) {
-        this.categoryIds = categoryIds;
     }
 
     @Override

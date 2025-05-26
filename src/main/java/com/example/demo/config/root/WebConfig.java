@@ -10,11 +10,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("https://wemovies-frontend-7e930cfa211b.herokuapp.com") // Cho phép React
-                .allowedOrigins("https://localhost:3000")
+                .allowedOrigins(
+                        "https://wemovies-frontend-7e930cfa211b.herokuapp.com",
+                        "http://localhost:3000"
+                ) // Allow multiple origins
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true)
-        ;
+                .allowCredentials(true);
     }
 }

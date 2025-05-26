@@ -22,7 +22,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     // delete film by id
     @Modifying
     @Transactional
-    @Query("DELETE FROM Movie m WHERE m.movie_id = :id")
+    @Query("DELETE FROM Movie m WHERE m.id = :id")
     void deleteMovieById(@Param("id") Long id);
 
     // search film by title , name actor ,...

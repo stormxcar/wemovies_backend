@@ -159,7 +159,7 @@ public class AuthController {
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/change-password")
-    public ResponseEntity<String> changePassword(@Valid @RequestBody  ChangePasswordRequest request,
+    public ResponseEntity<String> changePassword(@Valid @RequestBody ChangePasswordRequest request,
                                                  Principal principal) {
         authService.changePassword(principal.getName(), request);
         return ResponseEntity.ok("Đổi mật khẩu thành công");
@@ -167,13 +167,19 @@ public class AuthController {
 
 
     private void addJwtCookie(HttpServletResponse response, String token, String cookieName) {
-        Cookie jwtCookie = new Cookie(cookieName, token);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(24 * 60 * 60);
-        jwtCookie.setAttribute("SameSite", "Strict");
-        response.addCookie(jwtCookie);
+        Cookie cookie = new Cookie(cookieName, token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // Set to true in production for HTTPS
+        cookie.setPath("/");
+        cookie.setMaxAge(24 * 60 * 60); // 24 hours
+
+        // Add the cookie to the response
+        response.addCookie(cookie);
+
+        // Manually set the SameSite attribute
+        String sameSiteCookie = String.format("%s=%s; Path=%s; HttpOnly; Max-Age=%d; SameSite=Lax",
+                cookieName, token, "/", 24 * 60 * 60);
+        response.addHeader("Set-Cookie", sameSiteCookie);
     }
 
     private void clearCookie(HttpServletResponse response, String cookieName) {
