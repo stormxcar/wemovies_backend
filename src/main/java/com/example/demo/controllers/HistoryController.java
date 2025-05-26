@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @RestController
+@CrossOrigin(origins = {"http://localhost:3000", "https://wemovies-backend-b74e2422331f.herokuapp.com"})
 @RequestMapping("/api/history")
 public class HistoryController {
 

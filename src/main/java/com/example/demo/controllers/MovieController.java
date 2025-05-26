@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 @RestController
+@CrossOrigin(origins = {"http://localhost:3000", "https://wemovies-backend-b74e2422331f.herokuapp.com"})
 @RequestMapping("/api/movies")
 public class MovieController {
     @Autowired
