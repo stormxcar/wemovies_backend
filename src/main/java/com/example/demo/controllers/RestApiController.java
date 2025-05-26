@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "https://wemovies-backend-b74e2422331f.herokuapp.com/"})
 public class RestApiController {
     @Autowired
     private MovieService movieService;
