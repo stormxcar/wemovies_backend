@@ -40,4 +40,6 @@ public class User {
     private String avatar;
     private Date dateOfBirth;
 
+    private String googleId;
+
 }

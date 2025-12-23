@@ -117,6 +117,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    public List<Movie> getMoviesByCountryId(Long countryId) {
+        return movieRepository.getMoviesByCountryId(countryId);
+    }
+
+    @Override
     public List<Movie> findMoviesByCountryAndCategory(String countryName, String categoryName) {
         return movieRepository.findMoviesByCountryAndCategory(countryName, categoryName);
     }

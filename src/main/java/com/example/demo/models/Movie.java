@@ -1,11 +1,14 @@
 package com.example.demo.models;
 
 import com.example.demo.utils.YoutubeUrlUtil;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -37,8 +40,14 @@ public class Movie {
 
     @Column(name = "total_episodes", nullable = true)
     private Integer totalEpisodes; // cho phep null với Integer
-    @Column(name = "episode_links", columnDefinition = "LONGTEXT")
+
+    @Column(name = "episode_links", columnDefinition = "TEXT")
+    @Deprecated
     private String episodeLinks;
+
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Episode> episodes = new ArrayList<>();
 
     @Column(columnDefinition = "LONGTEXT")
     private String description;
@@ -76,58 +85,5 @@ public class Movie {
 
     public enum Quality {
         SD, HD, FULL_HD, _4K
-    }
-
-    // get the video id from the trailer link
-    public String getEmbedLink() {
-        String videoId = YoutubeUrlUtil.extractVideoId(this.trailer);
-        if (videoId != null && !videoId.isEmpty()) {
-            return "https://www.youtube.com/embed/" + videoId;
-        }
-        return "";
-    }
-
-//    System.out.println("Embed link: " + movie.getEmbedLink());
-
-
-    // Method to calculate average duration
-//    public int getAverageDuration() {
-//        if (episodeDurations == null || episodeDurations.isEmpty()) {
-//            return 0;
-//        }
-//        String[] durations = episodeDurations.split(",");
-//        int totalDuration = 0;
-//        for (String duration : durations) {
-//            totalDuration += Integer.parseInt(duration.trim());
-//        }
-//        return totalDuration / durations.length;
-//    }
-
-
-    @Override
-    public String toString() {
-        return "Movie{" +
-                "movie_id=" + id +
-                ",\n title='" + title + '\'' +
-                ",\n titleByLanguage='" + titleByLanguage + '\'' +
-                ",\n status='" + status + '\'' +
-                ",\n director='" + director + '\'' +
-                ",\n duration=" + duration +
-                ",\n trailer='" + trailer + '\'' +
-                ",\n quality=" + quality +
-                ",\n vietSub=" + vietSub +
-                ",\n views=" + views +
-                ",\n hot=" + hot +
-                ",\n totalEpisodes=" + totalEpisodes +
-                ",\n episodeLinks='" + episodeLinks + '\'' +
-                ",\n description='" + description + '\'' +
-                ",\n release_year=" + release_year +
-                ",\n link='" + link + '\'' +
-                ",\n thumb_url='" + thumb_url + '\'' +
-                ",\n country=" + country +
-                ",\n movieTypes=" + movieTypes +
-                ",\n movieCategories=" + movieCategories +
-                ",\n actors=" + actors +
-                '}';
     }
 }

@@ -2,6 +2,7 @@ package com.example.demo.controllers.auth;
 
 import com.example.demo.config.user.JwtUtil;
 import com.example.demo.dto.*;
+import com.example.demo.models.auth.GoogleLoginRequest;
 import com.example.demo.models.auth.User;
 import com.example.demo.repositories.auth.RoleRepository;
 import com.example.demo.repositories.auth.UserRepository;
@@ -11,6 +12,7 @@ import com.example.demo.services.EmailService;
 import com.example.demo.services.Impls.CustomUserDetailsService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -52,6 +54,25 @@ public class AuthController {
     private RoleRepository roleRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleLoginRequest googleLoginRequest, HttpServletResponse response) {
+        try {
+
+            AuthResponse authResponse = authService.googleLogin(googleLoginRequest.getIdToken());
+            addJwtCookie(response, authResponse.getAccessToken(), "jwtToken");
+            addJwtCookie(response, authResponse.getRefreshToken(), "refreshToken");
+            return ResponseEntity.ok(authResponse);
+        } catch (ExpiredJwtException e) {
+
+            return ResponseEntity.status(401)
+                    .body(new AuthResponse("Google ID Token expired: " + e.getMessage(), null));
+        } catch (Exception e) {
+
+            return ResponseEntity.status(401)
+                    .body(new AuthResponse("Google login failed: " + e.getMessage(), null));
+        }
+    }
 
 
     @PostMapping("/login")
@@ -104,7 +125,7 @@ public class AuthController {
                 return ResponseEntity.ok(response);
             } catch (Exception ex) {
                 ex.printStackTrace();
-                return ResponseEntity.status(500).body("Lỗi xảy ra: " + ex.getMessage());
+                return ResponseEntity.status(401).body("Lỗi xảy ra: " + ex.getMessage());
             }
         }
         return ResponseEntity.status(401).body("Token không hợp lệ hoặc không tồn tại");

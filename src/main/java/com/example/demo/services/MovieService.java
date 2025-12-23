@@ -21,6 +21,7 @@ public interface MovieService {
     List<Movie> getMovieByHot(boolean isHot);
 
     List<Movie> getMoviesByCategoryId(Long categoryId);
+    List<Movie> getMoviesByCountryId(Long countryId);
 
     List<Movie> findMoviesByCountryAndCategory(String countryName, String categoryName);
 

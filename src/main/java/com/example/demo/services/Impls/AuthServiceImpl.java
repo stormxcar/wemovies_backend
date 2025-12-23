@@ -12,6 +12,10 @@ import com.example.demo.services.AuthService;
 import com.example.demo.services.EmailService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -25,7 +29,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -63,6 +70,54 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+    }
+
+    @Value("${google.client-id}")
+    private String googleClientId;
+
+    @Override
+    public AuthResponse googleLogin(String idToken) throws GeneralSecurityException, IOException {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+
+        GoogleIdToken googleIdToken = verifier.verify(idToken);
+        if (googleIdToken == null) {
+            throw new RuntimeException("Invalid Google token");
+        }
+
+        GoogleIdToken.Payload payload = googleIdToken.getPayload();
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        String picture = (String) payload.get("picture");
+        String googleId = payload.getSubject();
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            user.setUserName(email);
+            user.setFullName(name != null ? name : email.split("@")[0]);
+            user.setAvatar(picture);
+            user.setGoogleId(googleId);
+            user.setRole(roleRepository.findByRoleName("USER").orElseThrow(() -> new RuntimeException("Role not found")));
+            user = userRepository.save(user);
+        } else if (user.getGoogleId() == null) {
+            user.setGoogleId(googleId);
+            user.setAvatar(user.getAvatar() != null ? user.getAvatar() : picture);
+            userRepository.save(user);
+        }
+
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+        String accessToken = jwtUtil.generateToken(userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
+
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setAccessToken(accessToken);
+        authResponse.setRefreshToken(refreshToken);
+        authResponse.setUser(user); // Tự động set displayName, avatar, role, email
+
+        return authResponse;
     }
 
     @Override

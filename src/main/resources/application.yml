@@ -2,13 +2,15 @@ spring:
   application:
     name: demo
   datasource:
-    url: ${JAWSDB_URL}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 5 # Giới hạn tối đa 5 kết nối
+      maximum-pool-size: 5
       minimum-idle: 1
-      idle-timeout: 30000 # 30 giây
-      connection-timeout: 20000 # 20 giây
+      idle-timeout: 30000
+      connection-timeout: 20000
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,15 +18,14 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-server:
-  port: ${PORT:8080}
-
+  server:
+    port: 8080
 
   mail:
     host: smtp.gmail.com
     port: 587
-    username: nguyentruongan0610@gmail.com
-    password: njehntdgsveweffi
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -37,7 +38,7 @@ server:
     port: 6379
 
 jwt:
-  secret: jW9sR7p1dQc4TfXuEzN6BvLgKa2MhZcVrW0XyAjKl9DsRuBnFxGvTyPnQzLtYkMi
+  secret: ${JWT_SECRET}
   access:
     expiration: 3600000
   refresh:
@@ -45,10 +46,20 @@ jwt:
 
 logging:
   level:
-    org.springframework: DEBUG
+    org.springframework: INFO
+    org.springframework.boot.autoconfigure: INFO
     org.hibernate: DEBUG
+    com:
+      google:
+        api:
+          client: DEBUG
+    io:
+      jsonwebtoken: DEBUG
 
 cloudinary:
-  cloud_name: dzwjgfd7t
-  api_key: 526411628189671
-  api_secret: ZtrL-STYHdMSCxaASgrQ1RGrUUY
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID}

@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:3000", "https://wemovies-backend-b74e2422331f.herokuapp.com"})
 public class RestApiController {
     @Autowired
     private MovieService movieService;
@@ -30,19 +29,6 @@ public class RestApiController {
             return ResponseEntity.ok(new ApiResponse<>(true, "Episode links retrieved successfully", episodeLinks));
         } catch (Exception e) {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving episode links", null), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("/movies/{id}")
-    public ResponseEntity<ApiResponse<Movie>> movieById(@PathVariable Long id) {
-        try {
-            Movie movie = movieService.getMovieById(id);
-            if (movie == null) {
-                return new ResponseEntity<>(new ApiResponse<>(false, "Movie not found", null), HttpStatus.NOT_FOUND);
-            }
-            return ResponseEntity.ok(new ApiResponse<>(true, "Movie retrieved successfully", movie));
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving the movie", null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -65,6 +51,19 @@ public class RestApiController {
             List<Movie> movies = movieService.getMoviesByCategoryId(categoryId);
             if (movies.isEmpty()) {
                 return ResponseEntity.ok(new ApiResponse<>(true, "No movies found for the category ID", null));
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movies retrieved successfully", movies));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving movies", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/movies/country/{countryId}")
+    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByCountryId(@PathVariable Long countryId) {
+        try {
+            List<Movie> movies = movieService.getMoviesByCountryId(countryId);
+            if (movies.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse<>(true, "No movies found for the country ID", null));
             }
             return ResponseEntity.ok(new ApiResponse<>(true, "Movies retrieved successfully", movies));
         } catch (Exception e) {
