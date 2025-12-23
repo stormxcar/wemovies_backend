@@ -3,17 +3,18 @@ package com.example.demo.services;
 
 import com.example.demo.models.Category;
 import java.util.List;
+import java.util.UUID;
 
 
 public interface CategoryService {
     List<Category> getAllCategory();
 
-    Category getCategoryById(Long id);
-    List<Category> getCategoriesByIds(List<Long> ids);
+    Category getCategoryById(UUID id);
+    List<Category> getCategoriesByIds(List<UUID> ids);
 
     Category saveCategory(Category category);
-    void deleteMovieCategoryById(Long id);
+    void deleteMovieCategoryById(UUID id);
 
-    int countMoviesByCategoryId(Long categoryId);
+    int countMoviesByCategoryId(UUID categoryId);
     int countCategories();
 }

@@ -1,6 +1,11 @@
 package com.example.demo.services;
 
-import com.example.demo.dto.*;
+import com.example.demo.dto.request.ChangePasswordRequest;
+import com.example.demo.dto.request.ForgotPasswordRequest;
+import com.example.demo.dto.request.LoginRequest;
+import com.example.demo.dto.request.RegisterRequest;
+import com.example.demo.dto.request.ResetPasswordRequest;
+import com.example.demo.dto.response.AuthResponse;
 import com.example.demo.models.auth.GoogleLoginRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 

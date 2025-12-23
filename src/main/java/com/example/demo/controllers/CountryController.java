@@ -1,6 +1,6 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.models.Country;
 import com.example.demo.services.CountryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/countries")
@@ -40,7 +41,7 @@ public class CountryController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<ApiResponse<Country>> editCountry(@PathVariable("id") Long id, @RequestBody Country country) {
+    public ResponseEntity<ApiResponse<Country>> editCountry(@PathVariable("id") UUID id, @RequestBody Country country) {
         try {
             if (id != null && country.getId() != null && id.equals(country.getId())) {
                 Country updatedCountry = countryService.saveCountry(country);
@@ -54,7 +55,7 @@ public class CountryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCountry(@PathVariable("id") Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCountry(@PathVariable("id") UUID id) {
         try {
             countryService.deleteCountry(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Country deleted successfully", null));

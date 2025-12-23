@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Data
 @Getter
@@ -14,7 +16,7 @@ import lombok.*;
 @Table(name = "movie_type")
 public class MovieType {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
     private String name;
 }

@@ -1,6 +1,6 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.models.*;
 import com.example.demo.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -23,7 +24,7 @@ public class RestApiController {
     private MovieTypeSevice movieTypeSevice;
 
     @GetMapping("/movies/{movieId}/episodes")
-    public ResponseEntity<ApiResponse<List<String>>> getEpisodeLinks(@PathVariable Long movieId) {
+    public ResponseEntity<ApiResponse<List<String>>> getEpisodeLinks(@PathVariable UUID movieId) {
         try {
             List<String> episodeLinks = movieService.getEpisodeLinks(movieId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Episode links retrieved successfully", episodeLinks));
@@ -46,7 +47,7 @@ public class RestApiController {
     }
 
     @GetMapping("/movies/category/id/{categoryId}")
-    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByCategoryId(@PathVariable Long categoryId) {
+    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByCategoryId(@PathVariable UUID categoryId) {
         try {
             List<Movie> movies = movieService.getMoviesByCategoryId(categoryId);
             if (movies.isEmpty()) {
@@ -59,7 +60,7 @@ public class RestApiController {
     }
 
     @GetMapping("/movies/country/{countryId}")
-    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByCountryId(@PathVariable Long countryId) {
+    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByCountryId(@PathVariable UUID countryId) {
         try {
             List<Movie> movies = movieService.getMoviesByCountryId(countryId);
             if (movies.isEmpty()) {
@@ -72,7 +73,7 @@ public class RestApiController {
     }
 
     @GetMapping("/movies/category/count/{categoryId}")
-    public ResponseEntity<ApiResponse<Integer>> countMoviesByCategoryId(@PathVariable Long categoryId) {
+    public ResponseEntity<ApiResponse<Integer>> countMoviesByCategoryId(@PathVariable UUID categoryId) {
         try {
             int count = categoryService.countMoviesByCategoryId(categoryId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Movie count retrieved successfully", count));

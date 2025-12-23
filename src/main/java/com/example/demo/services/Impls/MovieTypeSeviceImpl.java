@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class MovieTypeSeviceImpl implements MovieTypeSevice {
@@ -18,7 +19,7 @@ public class MovieTypeSeviceImpl implements MovieTypeSevice {
     }
 
     @Override
-    public MovieType getMovieTypeById(Long id) {
+    public MovieType getMovieTypeById(UUID id) {
         return movieTypeRepository.findById(id).orElse(null);
     }
 
@@ -28,13 +29,13 @@ public class MovieTypeSeviceImpl implements MovieTypeSevice {
     }
 
     @Override
-    public void deleteMovieTypeById(Long id) {
+    public void deleteMovieTypeById(UUID id) {
             MovieType movieType = movieTypeRepository.findById(id).orElse(null);
             movieTypeRepository.delete(movieType);
     }
 
     @Override
-    public int countMoviesByMovieTypeId(Long movieTypeId) {
+    public int countMoviesByMovieTypeId(UUID movieTypeId) {
         return movieTypeRepository.countMoviesByMovieTypeId(movieTypeId);
     }
 

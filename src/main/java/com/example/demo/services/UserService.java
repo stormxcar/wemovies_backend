@@ -1,20 +1,21 @@
 package com.example.demo.services;
 
-import com.example.demo.dto.UserDTO;
+import com.example.demo.dto.response.UserDTO;
 import com.example.demo.models.auth.User;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface UserService {
     User findByUsername(String username);
-    User findById(Long id);
+    User findById(UUID id);
 
     // update user information
-    User updateUserProfile(Long id, String fullName, String address, String dateOfBirth, String gender, String avatarUrl);
+    User updateUserProfile(UUID id, String fullName, String address, String dateOfBirth, String gender, String avatarUrl);
 
 
     // User DTO
-    UserDTO getUserById(Long id);
+    UserDTO getUserById(UUID id);
 
-    String getUserRoleById(Long id);
+    String getUserRoleById(UUID id);
 }

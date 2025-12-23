@@ -1,6 +1,6 @@
 package com.example.demo.controllers.auth;
 
-import com.example.demo.dto.UserDTO;
+import com.example.demo.dto.response.UserDTO;
 import com.example.demo.models.auth.User;
 import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.services.Impls.CloudinaryService;
@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/user")
@@ -40,19 +41,19 @@ public class UserController {
 
     // get user & admin by id
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(@PathVariable UUID id) {
         User user = userService.findById(id);
         return ResponseEntity.ok(user);
     }
 
     @GetMapping("/admin/{id}")
-    public ResponseEntity<UserDTO> getUserDTOById(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> getUserDTOById(@PathVariable UUID id) {
         UserDTO user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
 
     @GetMapping("/role/{id}")
-    public ResponseEntity<String> getUserRoleById(@PathVariable Long id) {
+    public ResponseEntity<String> getUserRoleById(@PathVariable UUID id) {
         String role = userService.getUserRoleById(id);
         return ResponseEntity.ok(role);
     }
@@ -60,7 +61,7 @@ public class UserController {
 
     @PutMapping("/{id}/update-profile")
     public ResponseEntity<User> updateUserProfile(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "fullName", required = false) String fullName,
             @RequestParam(value = "address", required = false) String address,

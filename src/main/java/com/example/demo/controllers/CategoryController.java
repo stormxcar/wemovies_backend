@@ -1,6 +1,6 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.models.Category;
 import com.example.demo.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -45,7 +46,7 @@ public class CategoryController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<ApiResponse<Category>> editCategory(@PathVariable("id") Long id, @RequestBody Category category) {
+    public ResponseEntity<ApiResponse<Category>> editCategory(@PathVariable("id") UUID id, @RequestBody Category category) {
         try {
             if (id != null && category.getId() != null && id.equals(category.getId())) {
                 Category updatedCategory = categoryService.saveCategory(category);
@@ -59,7 +60,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable("id") Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable("id") UUID id) {
         try {
             categoryService.deleteMovieCategoryById(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Category deleted successfully", null));

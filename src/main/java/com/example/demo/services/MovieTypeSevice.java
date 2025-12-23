@@ -3,13 +3,14 @@ package com.example.demo.services;
 import com.example.demo.models.MovieType;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface MovieTypeSevice {
     List<MovieType> getAllMovieTypes();
-    MovieType getMovieTypeById(Long id);
+    MovieType getMovieTypeById(UUID id);
     MovieType saveMovieType(MovieType movieType);
-    void deleteMovieTypeById(Long id);
+    void deleteMovieTypeById(UUID id);
 
-    int countMoviesByMovieTypeId(Long movieTypeId);
+    int countMoviesByMovieTypeId(UUID movieTypeId);
     int countMovieTypes();
 }

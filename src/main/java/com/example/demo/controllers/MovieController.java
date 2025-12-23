@@ -1,6 +1,6 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.models.*;
 import com.example.demo.services.CategoryService;
 import com.example.demo.services.CountryService;
@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/movies")
@@ -45,7 +46,7 @@ public class MovieController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Movie>> getMovieById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Movie>> getMovieById(@PathVariable UUID id) {
         try {
             Movie movie = movieService.getMovieById(id);
             if (movie == null) {
@@ -77,9 +78,9 @@ public class MovieController {
     public ResponseEntity<ApiResponse<Movie>> addMovie(@RequestBody Movie movie,
                                                        @RequestParam("actors") String[] actors,
                                                        @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
-                                                       @RequestParam("countryId") Long countryId,
-                                                       @RequestParam("movieTypeIds") List<Long> movieTypeIds,
-                                                       @RequestParam("categoryIds") List<Long> categoryIds) {
+                                                       @RequestParam("countryId") UUID countryId,
+                                                       @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
+                                                       @RequestParam("categoryIds") List<UUID> categoryIds) {
         try {
             Set<String> actorSet = new HashSet<>();
             for (String actor : actors) {
@@ -99,14 +100,14 @@ public class MovieController {
             movie.setCountry(country);
 
             Set<MovieType> movieTypes = new HashSet<>();
-            for (Long id : movieTypeIds) {
+            for (UUID id : movieTypeIds) {
                 MovieType movieType = movieTypeSevice.getMovieTypeById(id);
                 movieTypes.add(movieType);
             }
             movie.setMovieTypes(movieTypes);
 
             Set<Category> categories = new HashSet<>();
-            for (Long id : categoryIds) {
+            for (UUID id : categoryIds) {
                 Category category = categoryService.getCategoryById(id);
                 categories.add(category);
             }
@@ -186,13 +187,13 @@ public class MovieController {
 //    }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Movie> updateMovie(@PathVariable Long id,
+    public ResponseEntity<Movie> updateMovie(@PathVariable UUID id,
                                              @RequestBody Movie movie,
                                              @RequestParam("actors") String[] actors,
                                              @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
-                                             @RequestParam("countryId") Long countryId,
-                                             @RequestParam("movieTypeIds") List<Long> movieTypeIds,
-                                             @RequestParam("categoryIds") List<Long> categoryIds) {
+                                             @RequestParam("countryId") UUID countryId,
+                                             @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
+                                             @RequestParam("categoryIds") List<UUID> categoryIds) {
 
         Movie existingMovie = movieService.getMovieById(id);
         if (existingMovie == null) {
@@ -228,14 +229,14 @@ public class MovieController {
         existingMovie.setCountry(country);
 
         Set<MovieType> movieTypes = new HashSet<>();
-        for (Long mid : movieTypeIds) {
+        for (UUID mid : movieTypeIds) {
             MovieType movieType = movieTypeSevice.getMovieTypeById(mid);
             movieTypes.add(movieType);
         }
         existingMovie.setMovieTypes(movieTypes);
 
         Set<Category> categories = new HashSet<>();
-        for (Long cid : categoryIds) {
+        for (UUID cid : categoryIds) {
             Category category = categoryService.getCategoryById(cid);
             categories.add(category);
         }
@@ -264,7 +265,7 @@ public class MovieController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteMovie(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteMovie(@PathVariable UUID id) {
         try {
             movieService.deleteMovie(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Movie deleted successfully", null));
@@ -274,7 +275,7 @@ public class MovieController {
     }
 
     @GetMapping("/detail/{id}")
-    public ResponseEntity<ApiResponse<Movie>> detailMovie(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Movie>> detailMovie(@PathVariable UUID id) {
         try {
             Movie movie = movieService.getMovieById(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Movie details retrieved successfully", movie));

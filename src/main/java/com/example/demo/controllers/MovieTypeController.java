@@ -1,6 +1,6 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.models.MovieType;
 import com.example.demo.repositories.CategoryRepository;
 import com.example.demo.services.MovieTypeSevice;
@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/types")
@@ -44,7 +45,7 @@ public class MovieTypeController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<ApiResponse<MovieType>> editMovieType(@PathVariable("id") Long id, @RequestBody MovieType category) {
+    public ResponseEntity<ApiResponse<MovieType>> editMovieType(@PathVariable("id") UUID id, @RequestBody MovieType category) {
         try {
             if (id != null && category.getId() != null && id.equals(category.getId())) {
                 MovieType updatedCategory = movieTypeSevice.saveMovieType(category);
@@ -58,7 +59,7 @@ public class MovieTypeController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteMovieType(@PathVariable("id") Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteMovieType(@PathVariable("id") UUID id) {
         try {
             movieTypeSevice.deleteMovieTypeById(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Movie type deleted successfully", null));

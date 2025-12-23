@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CountryServiceImpl implements CountryService {
@@ -18,7 +19,7 @@ public class CountryServiceImpl implements CountryService {
     }
 
     @Override
-    public Country getCountryById(long id) {
+    public Country getCountryById(UUID id) {
         return countryRepositories.findById(id).orElse(null);
     }
 
@@ -28,13 +29,13 @@ public class CountryServiceImpl implements CountryService {
     }
 
     @Override
-    public void deleteCountry(long id) {
+    public void deleteCountry(UUID id) {
         Country country = countryRepositories.findById(id).orElse(null);
         countryRepositories.delete(country);
     }
 
     @Override
-    public int countMoviesByCountryId(long countryId) {
+    public int countMoviesByCountryId(UUID countryId) {
         return countryRepositories.countMoviesByCountryId(countryId);
     }
 

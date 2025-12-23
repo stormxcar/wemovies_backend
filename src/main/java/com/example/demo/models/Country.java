@@ -4,6 +4,8 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Data
 @Getter
@@ -14,7 +16,7 @@ import lombok.*;
 @Table(name = "country")
 public class Country {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
     private String name;
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -21,12 +22,12 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category getCategoryById(Long id) {
+    public Category getCategoryById(UUID id) {
         return categoryRepository.findById(id).orElse(null); // Trả về Category theo ID
     }
 
     @Override
-    public List<Category> getCategoriesByIds(List<Long> ids) {
+    public List<Category> getCategoriesByIds(List<UUID> ids) {
         return categoryRepository.findAllById(ids);
     }
 
@@ -36,12 +37,12 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public void deleteMovieCategoryById(Long id) {
+    public void deleteMovieCategoryById(UUID id) {
         categoryRepository.deleteById(id); // Xóa Category theo ID
     }
 
     @Override
-    public int countMoviesByCategoryId(Long categoryId) {
+    public int countMoviesByCategoryId(UUID categoryId) {
         return categoryRepository.countMoviesByCategoryId(categoryId);
     }
 

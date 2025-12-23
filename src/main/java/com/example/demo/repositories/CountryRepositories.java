@@ -6,10 +6,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.UUID;
+
 @Repository
-public interface CountryRepositories extends JpaRepository<Country, Long> {
+public interface CountryRepositories extends JpaRepository<Country, UUID> {
     @Query(value = "SELECT COUNT(m.movie_id) FROM movie AS m\n" +
             "JOIN country AS c ON c.country_id = m.country_id\n" +
             "WHERE c.country_id = :countryId", nativeQuery = true)
-    int countMoviesByCountryId(@Param("countryId") Long countryId);
+    int countMoviesByCountryId(@Param("countryId") UUID countryId);
 }

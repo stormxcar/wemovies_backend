@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Service
@@ -34,7 +35,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Movie getMovieById(Long id) {
+    public Movie getMovieById(UUID id) {
         return movieRepository.findById(id).orElse(null);
     }
 
@@ -44,7 +45,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Movie updateMovie(Long id, Movie updatedMovie) {
+    public Movie updateMovie(UUID id, Movie updatedMovie) {
         Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
 //        updateMovie().setTitle(updatedMovie.getTitle());
         movie.setTitle(updatedMovie.getTitle());
@@ -74,7 +75,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public void deleteMovie(Long id) {
+    public void deleteMovie(UUID id) {
         Movie movie = movieRepository.findById(id).orElse(null);
         movieRepository.deleteMovieById(id);
     }
@@ -95,7 +96,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<String> getEpisodeLinks(Long movieId) {
+    public List<String> getEpisodeLinks(UUID movieId) {
         Optional<Movie> movieOptional = movieRepository.findById(movieId);
         if (movieOptional.isPresent()) {
             Movie movie = movieOptional.get();
@@ -112,12 +113,12 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<Movie> getMoviesByCategoryId(Long categoryId) {
+    public List<Movie> getMoviesByCategoryId(UUID categoryId) {
         return movieRepository.getMoviesByCategoryId(categoryId);
     }
 
     @Override
-    public List<Movie> getMoviesByCountryId(Long countryId) {
+    public List<Movie> getMoviesByCountryId(UUID countryId) {
         return movieRepository.getMoviesByCountryId(countryId);
     }
 

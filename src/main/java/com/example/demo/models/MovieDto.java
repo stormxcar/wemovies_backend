@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 @Setter
 @Data
 public class MovieDto {
-    private Long id;
+    private UUID id;
     private String title;
     private String description;
     private Year release_year;
@@ -23,9 +24,9 @@ public class MovieDto {
     private String link;
 
 
-    private Long countryId;
-    private List<Long> movieTypeIds = new ArrayList<>();
-    private List<Long> categoryIds = new ArrayList<>();
+    private UUID countryId;
+    private List<UUID> movieTypeIds = new ArrayList<>();
+    private List<UUID> categoryIds = new ArrayList<>();
 
     private String titleByLanguage;
     private String status;

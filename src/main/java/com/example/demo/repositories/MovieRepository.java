@@ -12,9 +12,10 @@ import org.springframework.stereotype.Repository;
 import com.example.demo.models.Movie;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface MovieRepository extends JpaRepository<Movie, Long> {
+public interface MovieRepository extends JpaRepository<Movie, UUID> {
     Page<Movie> findAll(Pageable pageable);
 
     List<Movie> findByTitle(String title);
@@ -26,7 +27,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Modifying
     @Transactional
     @Query("DELETE FROM Movie m WHERE m.id = :id")
-    void deleteMovieById(@Param("id") Long id);
+    void deleteMovieById(@Param("id") UUID id);
 
     // search film by title , name actor ,...
     @Query("SELECT m FROM Movie m WHERE m.title LIKE %:keyword%")
@@ -40,12 +41,12 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             "JOIN movie_category AS mc ON mc.movie_id=m.id " +
             "JOIN category AS c ON c.id = mc.category_id " +
             "WHERE mc.category_id =:categoryId", nativeQuery = true)
-    List<Movie> getMoviesByCategoryId(@Param("categoryId") Long categoryId);
+    List<Movie> getMoviesByCategoryId(@Param("categoryId") UUID categoryId);
 
     @Query(value = "SELECT m.* FROM movie AS m " +
             "JOIN country AS co ON co.id = m.country_id " +
             "WHERE co.id = :countryId", nativeQuery = true)
-    List<Movie> getMoviesByCountryId(@Param("countryId") Long countryId);
+    List<Movie> getMoviesByCountryId(@Param("countryId") UUID countryId);
 
     // MovieRepository.java
     @Query(value = "SELECT m.* FROM movie AS m " +

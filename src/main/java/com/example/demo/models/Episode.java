@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Entity
 @Data
 @Getter
@@ -13,8 +15,8 @@ import lombok.Setter;
 @Table(name = "episode")
 public class Episode {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
 
     @Column(name = "episode_number", nullable = false)
     private Integer episodeNumber;
