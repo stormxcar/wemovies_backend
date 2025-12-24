@@ -32,7 +32,7 @@ public class SecurityConfig {
             "/api/auth/login",
             "/api/auth/logout",
             "/api/auth/request-otp",
-            "/api/auth/verify-otp"
+            "/api/auth/verify-otp",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
             "/api/auth/google-login",
