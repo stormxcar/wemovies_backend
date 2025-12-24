@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.Getter;
@@ -24,23 +26,25 @@ public class History {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(name = "user_id", nullable = false)
-    private String userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private com.example.demo.models.auth.User user;
 
-    @Column(name = "movie_id", nullable = false)
-    private String movieId;
+    @ManyToOne
+    @JoinColumn(name = "movie_id", nullable = false)
+    private Movie movie;
 
     @Column(name = "pause_time")
     private Double pauseTime;
 
-    @Column(name = "last_watched")
-    private LocalDateTime lastWatched;
+    @Column(name = "viewed_at")
+    private LocalDateTime viewedAt;
 
 
-    public History(String userId, String movieId, Double pauseTime) {
-        this.userId = userId;
-        this.movieId = movieId;
+    public History(com.example.demo.models.auth.User user, Movie movie, Double pauseTime) {
+        this.user = user;
+        this.movie = movie;
         this.pauseTime = pauseTime;
-        this.lastWatched = LocalDateTime.now();
+        this.viewedAt = LocalDateTime.now();
     }
 }

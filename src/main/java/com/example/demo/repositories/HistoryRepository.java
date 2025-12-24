@@ -10,12 +10,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.demo.models.History;
+import com.example.demo.models.Movie;
 
 import java.util.UUID;
 
 @Repository
 public interface HistoryRepository extends JpaRepository<History, UUID> {
-    Optional<History> findByUserIdAndMovieId(UUID userId, UUID movieId);
+    Optional<History> findByUserAndMovie(com.example.demo.models.auth.User user, Movie movie);
 
     // Thống kê lượt xem phim theo period
     @Query("SELECT DATE(h.viewedAt) as date, COUNT(h) as views FROM History h WHERE h.movie.id = :movieId AND h.viewedAt >= :start GROUP BY DATE(h.viewedAt) ORDER BY DATE(h.viewedAt)")
@@ -26,7 +27,7 @@ public interface HistoryRepository extends JpaRepository<History, UUID> {
     List<Object[]> getAllMovieViewsByPeriod(@Param("start") LocalDateTime start);
 
     // Thống kê lượt xem theo thể loại
-    @Query("SELECT DATE(h.viewedAt) as date, COUNT(h) as views FROM History h JOIN h.movie m WHERE m.category.id = :categoryId AND h.viewedAt >= :start GROUP BY DATE(h.viewedAt) ORDER BY DATE(h.viewedAt)")
+    @Query("SELECT DATE(h.viewedAt) as date, COUNT(h) as views FROM History h JOIN h.movie.movieCategories c WHERE c.id = :categoryId AND h.viewedAt >= :start GROUP BY DATE(h.viewedAt) ORDER BY DATE(h.viewedAt)")
     List<Object[]> getCategoryViewsByPeriod(@Param("categoryId") UUID categoryId, @Param("start") LocalDateTime start);
 
     // Thống kê hoạt động người dùng
