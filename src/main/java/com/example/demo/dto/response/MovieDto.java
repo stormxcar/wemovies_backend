@@ -1,5 +1,8 @@
-package com.example.demo.models;
+package com.example.demo.dto.response;
 
+import com.example.demo.models.Category;
+import com.example.demo.models.Movie;
+import com.example.demo.models.MovieType;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;

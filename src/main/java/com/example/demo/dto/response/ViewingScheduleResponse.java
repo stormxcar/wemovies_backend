@@ -1,7 +1,7 @@
 package com.example.demo.dto.response;
 
-import com.example.demo.models.MovieDto;
-import com.example.demo.models.ScheduleStatus;
+import com.example.demo.dto.response.MovieDto;
+import com.example.demo.enums.ScheduleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

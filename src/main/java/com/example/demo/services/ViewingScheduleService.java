@@ -2,7 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.dto.request.ViewingScheduleRequest;
 import com.example.demo.dto.response.ViewingScheduleResponse;
-import com.example.demo.models.ScheduleStatus;
+import com.example.demo.enums.ScheduleStatus;
 import com.example.demo.models.auth.User;
 
 import java.util.List;

@@ -1,6 +1,7 @@
 package com.example.demo.controllers;
 
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.dto.response.MovieDto;
 import com.example.demo.models.*;
 import com.example.demo.services.CategoryService;
 import com.example.demo.services.CountryService;

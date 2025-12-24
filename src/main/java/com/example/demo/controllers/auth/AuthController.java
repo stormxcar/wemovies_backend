@@ -112,33 +112,40 @@ public class AuthController {
     }
 
     @GetMapping("/verifyUser")
-    public ResponseEntity<?> verifyUser(HttpServletRequest request) {
-        String token = extractTokenFromCookies(request, "jwtToken");
-        if (token != null) {
-            try {
-                UserDetails userDetails = authService.verifyToken(token);
-                String email = userDetails.getUsername(); // giả định là email
-
-                User user = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", user.getId());
-                response.put("username", user.getUserName());
-                response.put("fullName", user.getFullName());
-                response.put("email", user.getEmail());
-                response.put("role", user.getRole().getRoleName());
-
-                return ResponseEntity.ok(response);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                return ResponseEntity.status(401).body("Lỗi xảy ra: " + ex.getMessage());
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> verifyUser(Principal principal) {
+        try {
+            if (principal == null || principal.getName() == null) {
+                return ResponseEntity.status(401).body("User not authenticated");
             }
+
+            String email = principal.getName();
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", user.getId());
+            response.put("username", user.getUserName());
+            response.put("fullName", user.getFullName());
+            response.put("email", user.getEmail());
+            response.put("role", user.getRole().getRoleName());
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException ex) {
+            // Specific handling for user not found
+            if (ex.getMessage().contains("User not found")) {
+                return ResponseEntity.status(404).body("User not found");
+            }
+            return ResponseEntity.status(401).body("Authentication failed: " + ex.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(500).body("Internal server error");
         }
-        return ResponseEntity.status(401).body("Token không hợp lệ hoặc không tồn tại");
     }
 
 
+    // Note: This endpoint is in PUBLIC_ROUTES in SecurityConfig as it handles refresh tokens
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = extractTokenFromCookies(request, "refreshToken");
@@ -192,6 +199,7 @@ public class AuthController {
         authService.changePassword(principal.getName(), request);
         return ResponseEntity.ok("Đổi mật khẩu thành công");
     }
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/profile")
     public ResponseEntity<String> updateProfile(@Valid @RequestBody UpdateProfileRequest request, Principal principal) {
         authService.updateProfile(principal.getName(), request);

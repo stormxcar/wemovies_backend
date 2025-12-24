@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.config.user.JwtAuthenticationFilter;
 import com.example.demo.exception.GlobalExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -30,6 +32,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
     private static final String[] PUBLIC_ROUTES = {
             "/api/auth/login",
             "/api/auth/logout",
@@ -38,7 +42,6 @@ public class SecurityConfig {
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
             "/api/auth/google",
-            "/api/auth/verifyUser",
             "/api/auth/refresh"
     };
 
@@ -59,7 +62,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/watchlist/**").authenticated()
                         .requestMatchers("/api/schedules/**").authenticated()
                         .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated()
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

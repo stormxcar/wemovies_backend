@@ -1,4 +1,4 @@
-package com.example.demo.models.auth;
+package com.example.demo.enums;
 
 public enum Gender {
     MALE, FEMALE

@@ -11,7 +11,7 @@ import com.example.demo.dto.response.AuthResponse;
 import com.example.demo.models.auth.Role;
 import com.example.demo.models.auth.User;
 import com.example.demo.models.auth.VerificationToken;
-import com.example.demo.models.auth.Gender;
+import com.example.demo.enums.Gender;
 import com.example.demo.repositories.auth.RoleRepository;
 import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.repositories.auth.VerificationTokenRepository;

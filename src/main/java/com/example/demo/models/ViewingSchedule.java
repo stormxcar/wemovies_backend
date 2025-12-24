@@ -1,5 +1,6 @@
 package com.example.demo.models;
 
+import com.example.demo.enums.ScheduleStatus;
 import com.example.demo.models.auth.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Future;

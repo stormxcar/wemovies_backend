@@ -1,5 +1,6 @@
 package com.example.demo.models.auth;
 
+import com.example.demo.enums.Gender;
 import com.example.demo.models.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

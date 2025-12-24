@@ -1,6 +1,6 @@
 package com.example.demo.repositories;
 
-import com.example.demo.models.ScheduleStatus;
+import com.example.demo.enums.ScheduleStatus;
 import com.example.demo.models.ViewingSchedule;
 import com.example.demo.models.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -2,7 +2,7 @@ package com.example.demo.services.Impls;
 
 import com.example.demo.dto.response.UserDTO;
 import com.example.demo.exception.UserNotFoundException;
-import com.example.demo.models.auth.Gender;
+import com.example.demo.enums.Gender;
 import com.example.demo.models.auth.User;
 import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.services.UserService;
