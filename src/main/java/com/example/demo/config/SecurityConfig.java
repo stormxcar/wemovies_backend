@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
                         .requestMatchers("/api/reviews/**").authenticated()
                         .requestMatchers("/api/watchlist/**").authenticated()
+                        .requestMatchers("/api/schedules/**").authenticated()
                         .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated()
                         .anyRequest().authenticated());
 

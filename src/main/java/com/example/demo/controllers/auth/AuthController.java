@@ -209,7 +209,7 @@ public class AuthController {
     private void addJwtCookie(HttpServletResponse response, String token, String cookieName) {
         Cookie cookie = new Cookie(cookieName, token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false); // Set to true in production for HTTPS
+        cookie.setSecure(true); // Always use HTTPS in production
         cookie.setPath("/");
         cookie.setMaxAge(24 * 60 * 60); // 24 hours
 
@@ -217,7 +217,7 @@ public class AuthController {
         response.addCookie(cookie);
 
         // Manually set the SameSite attribute
-        String sameSiteCookie = String.format("%s=%s; Path=%s; HttpOnly; Max-Age=%d; SameSite=Lax",
+        String sameSiteCookie = String.format("%s=%s; Path=%s; HttpOnly; Secure; Max-Age=%d; SameSite=Lax",
                 cookieName, token, "/", 24 * 60 * 60);
         response.addHeader("Set-Cookie", sameSiteCookie);
     }
