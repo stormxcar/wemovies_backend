@@ -37,12 +37,9 @@ public class SecurityConfig {
             "/api/auth/verify-otp",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
-            "/api/auth/google-login",
-            "/api/movies/**",
-            "/api/categories/**",
-            "/api/countries/**",
-            "/api/types/**",
-            "/api/**"
+            "/api/auth/google",
+            "/api/auth/verifyUser",
+            "/api/auth/refresh"
     };
 
     @Bean("mainSecurityFilterChain")
@@ -52,7 +49,15 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/countries/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/types/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
+                        .requestMatchers("/api/reviews/**").authenticated()
+                        .requestMatchers("/api/watchlist/**").authenticated()
+                        .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated()
                         .anyRequest().authenticated());
 
         return http.build();

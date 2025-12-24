@@ -6,10 +6,12 @@ import com.example.demo.dto.request.ForgotPasswordRequest;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.dto.request.ResetPasswordRequest;
+import com.example.demo.dto.request.UpdateProfileRequest;
 import com.example.demo.dto.response.AuthResponse;
 import com.example.demo.models.auth.Role;
 import com.example.demo.models.auth.User;
 import com.example.demo.models.auth.VerificationToken;
+import com.example.demo.models.auth.Gender;
 import com.example.demo.repositories.auth.RoleRepository;
 import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.repositories.auth.VerificationTokenRepository;
@@ -17,6 +19,9 @@ import com.example.demo.services.AuthService;
 import com.example.demo.services.EmailService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.example.demo.services.Impls.CloudinaryService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -32,11 +37,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Random;
@@ -56,6 +64,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Autowired
     private RoleRepository roleRepository;
@@ -321,5 +332,38 @@ public class AuthServiceImpl implements AuthService {
         // Gán mật khẩu mới đã mã hoá
         user.setPassWord(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+    }
+
+    @Override
+    public void updateProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getUserName() != null) user.setUserName(request.getUserName());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getGender() != null) user.setGender(Gender.valueOf(request.getGender().toUpperCase()));
+        if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
+        if (request.getAvatar() != null) user.setAvatar(request.getAvatar());
+
+        userRepository.save(user);
+    }
+
+    @Override
+    public String uploadAvatar(String email, MultipartFile file) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        try {
+            // Upload to Cloudinary
+            String avatarUrl = cloudinaryService.uploadFile(file);
+
+            user.setAvatar(avatarUrl);
+            userRepository.save(user);
+            return avatarUrl;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload avatar to Cloudinary: " + e.getMessage());
+        }
     }
 }

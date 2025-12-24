@@ -6,6 +6,7 @@ import com.example.demo.dto.request.ForgotPasswordRequest;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.dto.request.ResetPasswordRequest;
+import com.example.demo.dto.request.UpdateProfileRequest;
 import com.example.demo.dto.response.AuthResponse;
 import com.example.demo.models.auth.GoogleLoginRequest;
 import com.example.demo.models.auth.User;
@@ -30,8 +31,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -189,6 +191,18 @@ public class AuthController {
                                                  Principal principal) {
         authService.changePassword(principal.getName(), request);
         return ResponseEntity.ok("Đổi mật khẩu thành công");
+    }
+    @PutMapping("/profile")
+    public ResponseEntity<String> updateProfile(@Valid @RequestBody UpdateProfileRequest request, Principal principal) {
+        authService.updateProfile(principal.getName(), request);
+        return ResponseEntity.ok("Cập nhật hồ sơ thành công");
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/upload-avatar")
+    public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file, Principal principal) {
+        String avatarUrl = authService.uploadAvatar(principal.getName(), file);
+        return ResponseEntity.ok("Upload avatar thành công: " + avatarUrl);
     }
 
 

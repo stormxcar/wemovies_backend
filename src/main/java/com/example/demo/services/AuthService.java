@@ -5,8 +5,9 @@ import com.example.demo.dto.request.ForgotPasswordRequest;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.dto.request.ResetPasswordRequest;
+import com.example.demo.dto.request.UpdateProfileRequest;
 import com.example.demo.dto.response.AuthResponse;
-import com.example.demo.models.auth.GoogleLoginRequest;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.IOException;
@@ -23,6 +24,10 @@ public interface AuthService {
     public void forgotPassword(String email);
     public void resetPassword(ResetPasswordRequest request);
     public void changePassword(String usernameOrEmail, ChangePasswordRequest request);
+
+    public void updateProfile(String email, UpdateProfileRequest request);
+
+    public String uploadAvatar(String email, MultipartFile file);
 
     AuthResponse googleLogin(String idToken) throws GeneralSecurityException, IOException;
 
