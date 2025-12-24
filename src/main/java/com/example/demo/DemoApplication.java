@@ -12,7 +12,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
 @SpringBootApplication
+@EnableJpaAuditing
 public class DemoApplication {
 
     public static void main(String[] args) {
@@ -51,7 +54,7 @@ public class DemoApplication {
             if (adminUserOpt.isEmpty()) {
                 User adminUser = new User();
                 adminUser.setUserName("admin");
-                adminUser.setPassWord(new BCryptPasswordEncoder().encode("admin"));
+                adminUser.setPassWord(new BCryptPasswordEncoder().encode("Admin@1234"));
                 adminUser.setEmail("admin@example.com");
                 adminUser.setRole(adminRole);
                 adminUser.setIsActive(true);

@@ -1,7 +1,9 @@
 package com.example.demo.models.auth;
 
+import com.example.demo.models.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,10 +16,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Role {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+@EqualsAndHashCode(callSuper = true)
+public class Role extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String roleName;

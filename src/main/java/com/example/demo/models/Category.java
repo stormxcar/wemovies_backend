@@ -7,15 +7,12 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Data
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "category")
-public class Category {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    public UUID id;
-    public String name;
+public class Category extends BaseEntity {
+    private String name;
 }

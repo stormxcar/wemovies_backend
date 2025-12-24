@@ -7,16 +7,13 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Data
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "movie_type")
-public class MovieType {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+public class MovieType extends BaseEntity {
     private String name;
 }

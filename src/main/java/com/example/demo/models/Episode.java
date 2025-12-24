@@ -3,20 +3,18 @@ package com.example.demo.models;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.UUID;
 
 @Entity
-@Data
 @Getter
 @Setter
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "episode")
-public class Episode {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+public class Episode extends BaseEntity {
 
     @Column(name = "episode_number", nullable = false)
     private Integer episodeNumber;

@@ -15,16 +15,12 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Data
-//@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "movie")
-public class Movie {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+public class Movie extends BaseEntity {
     private String title;
 
     // bonus

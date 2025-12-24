@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserService {
             user.setAvatar(avatarUrl);
         }
 
-        user.setUpdateAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
 

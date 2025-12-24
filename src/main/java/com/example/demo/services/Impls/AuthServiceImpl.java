@@ -219,7 +219,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(token.getEmail());
         user.setPhoneNumber(token.getPhoneNumber());
         user.setIsActive(true);
-        user.setCreateAt(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
 
         Role role = roleRepository.findByRoleName(token.getRoleName())
                 .orElseThrow(() -> new RuntimeException("Role không tồn tại"));

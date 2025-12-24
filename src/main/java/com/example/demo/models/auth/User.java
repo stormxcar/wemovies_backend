@@ -1,7 +1,9 @@
 package com.example.demo.models.auth;
 
+import com.example.demo.models.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,10 +18,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+@EqualsAndHashCode(callSuper = true)
+public class User extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
@@ -30,10 +30,6 @@ public class User {
 
     private String email;
     private String phoneNumber;
-    @Column(nullable = false)
-    private Boolean isActive = true;
-    private LocalDateTime createAt;
-    private LocalDateTime updateAt;
 
     private Gender gender;
     private String fullName;
