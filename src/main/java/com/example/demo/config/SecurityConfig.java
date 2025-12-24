@@ -74,7 +74,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "https://wemovies-frontend.vercel.app",
                 "http://localhost:3000",
-                "https://localhost:3000"
+                "https://localhost:3000",
+                "https://wemovies-backend.onrender.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -112,18 +113,39 @@ public class AuthController {
     }
 
     @GetMapping("/verifyUser")
-    @PreAuthorize("isAuthenticated()")
+    // @PreAuthorize("isAuthenticated()") // Temporarily disabled for debugging
     public ResponseEntity<?> verifyUser(Principal principal) {
+        System.out.println("=== VERIFY USER DEBUG ===");
+        System.out.println("Principal: " + principal);
+        if (principal != null) {
+            System.out.println("Principal name: " + principal.getName());
+        }
+
+        // Check SecurityContext
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("SecurityContext Authentication: " + auth);
+        if (auth != null) {
+            System.out.println("Authentication name: " + auth.getName());
+            System.out.println("Authentication authorities: " + auth.getAuthorities());
+        }
+
         try {
-            if (principal == null || principal.getName() == null) {
+            String email = null;
+            if (principal != null && principal.getName() != null) {
+                email = principal.getName();
+                System.out.println("Using Principal name: " + email);
+            } else if (auth != null && auth.getName() != null) {
+                email = auth.getName();
+                System.out.println("Using SecurityContext name: " + email);
+            } else {
+                System.out.println("No authentication found");
                 return ResponseEntity.status(401).body("User not authenticated");
             }
-
-            String email = principal.getName();
 
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
+            System.out.println("User found: " + user.getUserName());
             Map<String, Object> response = new HashMap<>();
             response.put("id", user.getId());
             response.put("username", user.getUserName());
@@ -133,12 +155,14 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException ex) {
+            System.out.println("RuntimeException: " + ex.getMessage());
             // Specific handling for user not found
             if (ex.getMessage().contains("User not found")) {
                 return ResponseEntity.status(404).body("User not found");
             }
             return ResponseEntity.status(401).body("Authentication failed: " + ex.getMessage());
         } catch (Exception ex) {
+            System.out.println("Exception: " + ex.getMessage());
             ex.printStackTrace();
             return ResponseEntity.status(500).body("Internal server error");
         }
