@@ -33,6 +33,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CookieConsentAuthorizationManager cookieConsentAuthorizationManager;
 
     private static final String[] PUBLIC_ROUTES = {
             "/api/auth/login",
@@ -58,10 +59,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/types/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
-                        .requestMatchers("/api/reviews/**").authenticated()
-                        .requestMatchers("/api/watchlist/**").authenticated()
-                        .requestMatchers("/api/schedules/**").authenticated()
-                        .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated()
+                        .requestMatchers("/api/cookies/**").permitAll() // Allow cookie preference management
+                        // Protected routes with cookie consent check
+                        .requestMatchers("/api/reviews/**").access(cookieConsentAuthorizationManager)
+                        .requestMatchers("/api/watchlist/**").access(cookieConsentAuthorizationManager)
+                        .requestMatchers("/api/schedules/**").access(cookieConsentAuthorizationManager)
+                        .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password", "/api/auth/verifyUser").access(cookieConsentAuthorizationManager)
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

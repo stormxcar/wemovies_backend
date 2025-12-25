@@ -18,6 +18,7 @@ public class AuthResponse {
     private String avatar;
     private String role;
     private String email;
+    private String message;
 
     public AuthResponse(String accessToken, String refreshToken) {
         this.accessToken = accessToken;

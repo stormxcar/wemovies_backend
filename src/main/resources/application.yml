@@ -48,6 +48,7 @@ logging:
   level:
     org.springframework: INFO
     org.springframework.boot.autoconfigure: INFO
+    com.example.demo.config: DEBUG
     org.hibernate: DEBUG
     com:
       google:

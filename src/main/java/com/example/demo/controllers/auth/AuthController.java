@@ -64,19 +64,25 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/google")
-    public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleLoginRequest googleLoginRequest, HttpServletResponse response) {
+    public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleLoginRequest googleLoginRequest, HttpServletRequest request, HttpServletResponse response) {
         try {
-
             AuthResponse authResponse = authService.googleLogin(googleLoginRequest.getIdToken());
-            addJwtCookie(response, authResponse.getAccessToken(), "jwtToken");
-            addJwtCookie(response, authResponse.getRefreshToken(), "refreshToken");
+
+            // Check if user has consented to necessary cookies
+            boolean hasCookieConsent = hasNecessaryCookieConsent(request);
+
+            if (hasCookieConsent) {
+                addJwtCookie(response, authResponse.getAccessToken(), "jwtToken");
+                addJwtCookie(response, authResponse.getRefreshToken(), "refreshToken");
+            } else {
+                authResponse.setMessage("Google login successful. Accept cookies for persistent session.");
+            }
+
             return ResponseEntity.ok(authResponse);
         } catch (ExpiredJwtException e) {
-
             return ResponseEntity.status(401)
                     .body(new AuthResponse("Google ID Token expired: " + e.getMessage(), null));
         } catch (Exception e) {
-
             return ResponseEntity.status(401)
                     .body(new AuthResponse("Google login failed: " + e.getMessage(), null));
         }
@@ -84,10 +90,22 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
         AuthResponse authResponse = authService.login(loginRequest);
-        addJwtCookie(response, authResponse.getAccessToken(), "jwtToken");
-        addJwtCookie(response, authResponse.getRefreshToken(), "refreshToken");
+
+        // Check if user has consented to necessary cookies
+        boolean hasCookieConsent = hasNecessaryCookieConsent(request);
+
+        if (hasCookieConsent) {
+            // Set JWT cookies for persistent authentication
+            addJwtCookie(response, authResponse.getAccessToken(), "jwtToken");
+            addJwtCookie(response, authResponse.getRefreshToken(), "refreshToken");
+            authResponse.setMessage("Login successful with persistent session");
+        } else {
+            // No cookies set - session only
+            authResponse.setMessage("Login successful. Accept cookies for persistent session.");
+        }
+
         return ResponseEntity.ok(authResponse);
     }
 
@@ -274,5 +292,19 @@ public class AuthController {
             }
         }
         return null;
+    }
+
+    private boolean hasNecessaryCookieConsent(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("cookiePreferences".equals(cookie.getName())) {
+                    String value = cookie.getValue();
+                    // Check if necessary cookies are accepted
+                    return value.contains("necessary=true");
+                }
+            }
+        }
+        return false;
     }
 }
