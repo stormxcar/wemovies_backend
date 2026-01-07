@@ -78,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
     private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
-    private EmailService emailService;
+    private AsyncEmailService asyncEmailService;
 
     @Autowired
     private VerificationTokenRepository verificationTokenRepository;
@@ -210,7 +210,8 @@ public class AuthServiceImpl implements AuthService {
 
         String emailContent = "<p>OTP của bạn là: <strong>" + otp + "</strong></p>";
         try {
-            emailService.sendEmail(request.getEmail(), "Mã OTP xác thực", emailContent);
+            // Gửi email bất đồng bộ để tránh timeout
+            asyncEmailService.sendEmailAsync(request.getEmail(), "Mã OTP xác thực", emailContent);
         } catch (MailException e) {
             throw new IllegalArgumentException("Email không tồn tại hoặc không thể gửi email đến địa chỉ này");
         }
@@ -294,7 +295,7 @@ public class AuthServiceImpl implements AuthService {
         verificationTokenRepository.save(token);
 
         String content = "<p>Mã OTP khôi phục mật khẩu của bạn là: <strong>" + otp + "</strong></p>";
-        emailService.sendEmail(email, "Khôi phục mật khẩu", content);
+        asyncEmailService.sendEmailAsync(email, "Khôi phục mật khẩu", content);
     }
 
     @Override

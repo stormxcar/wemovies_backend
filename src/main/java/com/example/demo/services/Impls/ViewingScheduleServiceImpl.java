@@ -34,7 +34,7 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
     private UserRepository userRepository;
 
     @Autowired
-    private EmailService emailService;
+    private AsyncEmailService asyncEmailService;
 
     @Override
     @Transactional
@@ -136,7 +136,7 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
                     schedule.getNotes() != null ? schedule.getNotes() : "Không có ghi chú"
                 );
 
-                emailService.sendEmail(schedule.getUser().getEmail(), subject, body);
+                asyncEmailService.sendEmailAsync(schedule.getUser().getEmail(), subject, body);
 
                 // Mark as completed or add a reminder sent flag if needed
                 // For now, we'll just send the email
