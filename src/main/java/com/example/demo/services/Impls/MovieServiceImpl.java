@@ -61,7 +61,7 @@ public class MovieServiceImpl implements MovieService {
         movie.setLink(updatedMovie.getLink());
         movie.setViews(updatedMovie.getViews());
         movie.setHot(updatedMovie.isHot());
-        movie.setActors(updatedMovie.getActors());
+        movie.setActorsSet(updatedMovie.getActorsSet());
         movie.setTotalEpisodes(updatedMovie.getTotalEpisodes());
         movie.setEpisodeLinks(updatedMovie.getEpisodeLinks());
 

@@ -22,10 +22,10 @@ spring:
     port: 8080
 
   mail:
-    host: smtp.gmail.com
+    host: smtp.resend.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: resend
+    password: ${RESEND_API_KEY}
     properties:
       mail:
         smtp:
@@ -40,9 +40,9 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   access:
-    expiration: 3600000
+    expiration: 86400000 # 24 hours for development
   refresh:
-    expiration: 86400000
+    expiration: 604800000 # 7 days
 
 logging:
   level:

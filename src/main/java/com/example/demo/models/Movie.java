@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -74,13 +75,26 @@ public class Movie extends BaseEntity {
     @Builder.Default
     private Set<Category> movieCategories = new HashSet<>();
 
-    @ElementCollection
-    @CollectionTable(name = "movie_actors", joinColumns = @JoinColumn(name = "movie_id"))
-    @Column(name = "actor")
-    @Builder.Default
-    private Set<String> actors = new HashSet<>();
+    @Column(name = "actors", columnDefinition = "TEXT")
+    private String actors; // Store as comma-separated string
 
     public enum Quality {
         SD, HD, FULL_HD, _4K
+    }
+
+    // Helper methods for actors
+    public Set<String> getActorsSet() {
+        if (actors == null || actors.trim().isEmpty()) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(Arrays.asList(actors.split(",")));
+    }
+
+    public void setActorsSet(Set<String> actorsSet) {
+        if (actorsSet == null || actorsSet.isEmpty()) {
+            this.actors = null;
+        } else {
+            this.actors = String.join(",", actorsSet);
+        }
     }
 }

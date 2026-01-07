@@ -3,15 +3,19 @@ package com.example.demo.controllers;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.MovieDto;
 import com.example.demo.models.*;
+import com.example.demo.services.Impls.CloudinaryService;
 import com.example.demo.services.CategoryService;
 import com.example.demo.services.CountryService;
 import com.example.demo.services.MovieService;
 import com.example.demo.services.MovieTypeSevice;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +36,9 @@ public class MovieController {
 
     @Autowired
     private CountryService countryService;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @GetMapping()
     public ResponseEntity<ApiResponse<List<Movie>>> movies() {
@@ -76,26 +83,64 @@ public class MovieController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<ApiResponse<Movie>> addMovie(@RequestBody Movie movie,
+    public ResponseEntity<ApiResponse<Movie>> addMovie(@RequestParam("title") String title,
+                                                       @RequestParam("description") String description,
+                                                       @RequestParam("director") String director,
+                                                       @RequestParam("duration") Integer duration,
+                                                       @RequestParam("hot") boolean hot,
+                                                       @RequestParam("link") String link,
+                                                       @RequestParam("quality") String quality,
+                                                       @RequestParam("release_year") Integer releaseYear,
+                                                       @RequestParam("status") String status,
+                                                       @RequestParam(value = "thumb_url", required = false) String thumbUrl,
+                                                       @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+                                                       @RequestParam("titleByLanguage") String titleByLanguage,
+                                                       @RequestParam(value = "totalEpisodes", required = false) Integer totalEpisodes,
+                                                       @RequestParam("trailer") String trailer,
+                                                       @RequestParam("vietSub") boolean vietSub,
                                                        @RequestParam("actors") String[] actors,
                                                        @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
                                                        @RequestParam("countryId") UUID countryId,
                                                        @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
                                                        @RequestParam("categoryIds") List<UUID> categoryIds) {
         try {
+            // Create Movie object from parameters
+            Movie movie = new Movie();
+            movie.setTitle(title);
+            // Handle thumbnail upload
+            String finalThumbUrl = null;
+            try {
+                if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+                    // Upload file to Cloudinary
+                    finalThumbUrl = cloudinaryService.uploadFile(thumbnailFile);
+                } else if (thumbUrl != null && !thumbUrl.trim().isEmpty()) {
+                    // Upload URL to Cloudinary
+                    finalThumbUrl = cloudinaryService.uploadFromUrl(thumbUrl);
+                }
+            } catch (Exception e) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload thumbnail: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            movie.setDescription(description);
+            movie.setDirector(director);
+            movie.setDuration(duration);
+            movie.setHot(hot);
+            movie.setLink(link);
+            movie.setQuality(Movie.Quality.valueOf(quality.toUpperCase().replace(" ", "_")));
+            movie.setRelease_year(Year.of(releaseYear));
+            movie.setStatus(status);
+            movie.setThumb_url(finalThumbUrl);
+            movie.setTitleByLanguage(titleByLanguage);
+            movie.setTotalEpisodes(totalEpisodes);
+            movie.setTrailer(trailer);
+            movie.setVietSub(vietSub);
+
             Set<String> actorSet = new HashSet<>();
             for (String actor : actors) {
                 if (!actor.trim().isEmpty()) {
                     actorSet.add(actor);
                 }
             }
-
-//            if (movie.getTotalEpisodes() != null && episodeLinks != null && !episodeLinks.isEmpty()) {
-//                movie.setEpisodeLinks(String.join(",", episodeLinks));
-//                movie.setLink(null);
-//            } else {
-//                movie.setEpisodeLinks(null);
-//            }
 
             Country country = countryService.getCountryById(countryId);
             movie.setCountry(country);
@@ -114,7 +159,7 @@ public class MovieController {
             }
             movie.setMovieCategories(categories);
 
-            movie.setActors(actorSet);
+            movie.setActorsSet(actorSet);
 
             // Handle episodes if provided
             if (episodeLinks != null && !episodeLinks.isEmpty()) {
@@ -137,7 +182,8 @@ public class MovieController {
             Movie savedMovie = movieService.saveMovie(movie);
             return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Movie added successfully", savedMovie));
         } catch (Exception e) {
-            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while adding the movie", null), HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while adding the movie: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -188,81 +234,115 @@ public class MovieController {
 //    }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Movie> updateMovie(@PathVariable UUID id,
-                                             @RequestBody Movie movie,
-                                             @RequestParam("actors") String[] actors,
-                                             @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
-                                             @RequestParam("countryId") UUID countryId,
-                                             @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
-                                             @RequestParam("categoryIds") List<UUID> categoryIds) {
+    public ResponseEntity<ApiResponse<Movie>> updateMovie(@PathVariable UUID id,
+                                                          @RequestParam("title") String title,
+                                                          @RequestParam("description") String description,
+                                                          @RequestParam("director") String director,
+                                                          @RequestParam("duration") Integer duration,
+                                                          @RequestParam("hot") boolean hot,
+                                                          @RequestParam("link") String link,
+                                                          @RequestParam("quality") String quality,
+                                                          @RequestParam("release_year") Integer releaseYear,
+                                                          @RequestParam("status") String status,
+                                                          @RequestParam(value = "thumb_url", required = false) String thumbUrl,
+                                                          @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+                                                          @RequestParam("titleByLanguage") String titleByLanguage,
+                                                          @RequestParam(value = "totalEpisodes", required = false) Integer totalEpisodes,
+                                                          @RequestParam("trailer") String trailer,
+                                                          @RequestParam("vietSub") boolean vietSub,
+                                                          @RequestParam("actors") String[] actors,
+                                                          @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
+                                                          @RequestParam("countryId") UUID countryId,
+                                                          @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
+                                                          @RequestParam("categoryIds") List<UUID> categoryIds) {
 
-        Movie existingMovie = movieService.getMovieById(id);
-        if (existingMovie == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // Update fields
-        existingMovie.setTitle(movie.getTitle());
-        existingMovie.setTitleByLanguage(movie.getTitleByLanguage());
-        existingMovie.setTrailer(movie.getTrailer());
-        existingMovie.setDirector(movie.getDirector());
-        existingMovie.setDuration(movie.getDuration());
-        existingMovie.setDescription(movie.getDescription());
-        existingMovie.setRelease_year(movie.getRelease_year());
-        existingMovie.setQuality(movie.getQuality());
-        existingMovie.setVietSub(movie.isVietSub());
-        existingMovie.setThumb_url(movie.getThumb_url());
-        existingMovie.setViews(movie.getViews());
-        existingMovie.setHot(movie.isHot());
-        existingMovie.setStatus(movie.getStatus());
-        existingMovie.setTotalEpisodes(movie.getTotalEpisodes());
-        existingMovie.setLink(movie.getLink());
-
-        Set<String> actorSet = new HashSet<>();
-        for (String actor : actors) {
-            if (!actor.trim().isEmpty()) {
-                actorSet.add(actor);
+        try {
+            Movie existingMovie = movieService.getMovieById(id);
+            if (existingMovie == null) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Movie not found", null), HttpStatus.NOT_FOUND);
             }
-        }
-        existingMovie.setActors(actorSet);
 
-        Country country = countryService.getCountryById(countryId);
-        existingMovie.setCountry(country);
-
-        Set<MovieType> movieTypes = new HashSet<>();
-        for (UUID mid : movieTypeIds) {
-            MovieType movieType = movieTypeSevice.getMovieTypeById(mid);
-            movieTypes.add(movieType);
-        }
-        existingMovie.setMovieTypes(movieTypes);
-
-        Set<Category> categories = new HashSet<>();
-        for (UUID cid : categoryIds) {
-            Category category = categoryService.getCategoryById(cid);
-            categories.add(category);
-        }
-        existingMovie.setMovieCategories(categories);
-
-        // Handle episodes
-        if (episodeLinks != null && !episodeLinks.isEmpty()) {
-            existingMovie.setTotalEpisodes(episodeLinks.size());
-            existingMovie.setLink(null);
-            existingMovie.getEpisodes().clear();
-            for (int i = 0; i < episodeLinks.size(); i++) {
-                Episode episode = new Episode();
-                episode.setEpisodeNumber(i + 1);
-                episode.setLink(episodeLinks.get(i));
-                episode.setMovie(existingMovie);
-                existingMovie.getEpisodes().add(episode);
+            // Handle thumbnail upload
+            String finalThumbUrl = existingMovie.getThumb_url(); // Keep existing if no new upload
+            try {
+                if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+                    // Upload file to Cloudinary
+                    finalThumbUrl = cloudinaryService.uploadFile(thumbnailFile);
+                } else if (thumbUrl != null && !thumbUrl.trim().isEmpty() && !thumbUrl.equals(existingMovie.getThumb_url())) {
+                    // Upload URL to Cloudinary only if it's different from current
+                    finalThumbUrl = cloudinaryService.uploadFromUrl(thumbUrl);
+                }
+            } catch (Exception e) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload thumbnail: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        } else {
-            existingMovie.setTotalEpisodes(null);
-            existingMovie.setLink(movie.getLink());
-            existingMovie.getEpisodes().clear();
-        }
 
-        Movie savedMovie = movieService.saveMovie(existingMovie);
-        return ResponseEntity.ok(savedMovie);
+            // Update fields
+            existingMovie.setTitle(title);
+            existingMovie.setDescription(description);
+            existingMovie.setDirector(director);
+            existingMovie.setDuration(duration);
+            existingMovie.setHot(hot);
+            existingMovie.setLink(link);
+            existingMovie.setQuality(Movie.Quality.valueOf(quality.toUpperCase().replace(" ", "_")));
+            existingMovie.setRelease_year(Year.of(releaseYear));
+            existingMovie.setStatus(status);
+            existingMovie.setThumb_url(finalThumbUrl);
+            existingMovie.setTitleByLanguage(titleByLanguage);
+            existingMovie.setTotalEpisodes(totalEpisodes);
+            existingMovie.setTrailer(trailer);
+            existingMovie.setVietSub(vietSub);
+
+            Set<String> actorSet = new HashSet<>();
+            for (String actor : actors) {
+                if (!actor.trim().isEmpty()) {
+                    actorSet.add(actor);
+                }
+            }
+            existingMovie.setActorsSet(actorSet);
+
+            Country country = countryService.getCountryById(countryId);
+            existingMovie.setCountry(country);
+
+            Set<MovieType> movieTypes = new HashSet<>();
+            for (UUID mid : movieTypeIds) {
+                MovieType movieType = movieTypeSevice.getMovieTypeById(mid);
+                movieTypes.add(movieType);
+            }
+            existingMovie.setMovieTypes(movieTypes);
+
+            Set<Category> categories = new HashSet<>();
+            for (UUID cid : categoryIds) {
+                Category category = categoryService.getCategoryById(cid);
+                categories.add(category);
+            }
+            existingMovie.setMovieCategories(categories);
+
+            // Handle episodes if provided
+            if (episodeLinks != null && !episodeLinks.isEmpty()) {
+                existingMovie.setTotalEpisodes(episodeLinks.size());
+                existingMovie.setLink(null); // Clear link for phim bộ
+                existingMovie.getEpisodes().clear();
+                List<Episode> episodes = new ArrayList<>();
+                for (int i = 0; i < episodeLinks.size(); i++) {
+                    Episode episode = new Episode();
+                    episode.setEpisodeNumber(i + 1); // Assign episode number (Tập 1, Tập 2, ...)
+                    episode.setLink(episodeLinks.get(i));
+                    episode.setMovie(existingMovie);
+                    episodes.add(episode);
+                }
+                existingMovie.setEpisodes(episodes);
+            } else {
+                existingMovie.setTotalEpisodes(totalEpisodes);
+                existingMovie.setLink(link);
+                existingMovie.getEpisodes().clear();
+            }
+
+            Movie savedMovie = movieService.saveMovie(existingMovie);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movie updated successfully", savedMovie));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while updating the movie: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @DeleteMapping("/delete/{id}")

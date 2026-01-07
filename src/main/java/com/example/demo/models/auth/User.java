@@ -26,7 +26,7 @@ public class User extends BaseEntity {
     private Role role;
     @Column(nullable = false, unique = true)
     private String userName;
-    @Column(nullable = false)
+    @Column(nullable = true) // Allow null for Google OAuth users
     private String passWord;
 
     private String email;

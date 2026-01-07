@@ -25,7 +25,14 @@ public class CloudinaryService {
 
     public String uploadFile(MultipartFile file) throws IOException {
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                "folder", "booking" // Specify the folder path
+                "folder", "movies" // Specify the folder path
+        ));
+        return uploadResult.get("url").toString();
+    }
+
+    public String uploadFromUrl(String imageUrl) throws IOException {
+        Map uploadResult = cloudinary.uploader().upload(imageUrl, ObjectUtils.asMap(
+                "folder", "movies" // Specify the folder path
         ));
         return uploadResult.get("url").toString();
     }

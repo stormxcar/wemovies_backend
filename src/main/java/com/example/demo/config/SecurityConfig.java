@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight requests
                         .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/countries/**").permitAll()
@@ -60,6 +61,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
                         .requestMatchers("/api/cookies/**").permitAll() // Allow cookie preference management
+                        .requestMatchers("/api/types/**").permitAll() // Allow CRUD operations for types
+                        .requestMatchers("/api/categories/**").permitAll() // Allow CRUD operations for categories
+                        .requestMatchers("/api/movies/**").permitAll() // Allow CRUD operations for movies
+                        .requestMatchers("/api/countries/**").permitAll() // Allow CRUD operations for countries
                         // Protected routes with cookie consent check
                         .requestMatchers("/api/reviews/**").access(cookieConsentAuthorizationManager)
                         .requestMatchers("/api/watchlist/**").access(cookieConsentAuthorizationManager)
