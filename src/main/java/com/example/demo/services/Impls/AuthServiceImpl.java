@@ -17,6 +17,7 @@ import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.repositories.auth.VerificationTokenRepository;
 import com.example.demo.services.AuthService;
 import com.example.demo.services.EmailService;
+import com.example.demo.services.LoginAttemptService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cloudinary.Cloudinary;
@@ -78,6 +79,9 @@ public class AuthServiceImpl implements AuthService {
     private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
+    private LoginAttemptService loginAttemptService;
+
+    @Autowired
     private AsyncEmailService asyncEmailService;
 
     @Autowired
@@ -137,29 +141,46 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public AuthResponse login(LoginRequest loginRequest) {
-        // Tìm user theo email
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
-
-        // Kiểm tra tài khoản đã xác thực chưa
-        if (!user.getIsActive()) {
-            throw new RuntimeException("Tài khoản chưa được xác thực qua OTP");
+    public AuthResponse login(LoginRequest loginRequest, String clientIp) {
+        // Kiểm tra xem IP có bị block không
+        if (loginAttemptService.isBlocked(clientIp)) {
+            long remainingMinutes = loginAttemptService.getRemainingBlockTime(clientIp);
+            throw new RuntimeException("IP của bạn đã bị tạm khóa do nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau " + remainingMinutes + " phút.");
         }
 
-        // Kiểm tra mật khẩu
-        if (!passwordEncoder.matches(loginRequest.getPassWord(), user.getPassWord())) {
-            throw new RuntimeException("Sai mật khẩu");
+        try {
+            // Tìm user theo email
+            User user = userRepository.findByEmail(loginRequest.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+
+            // Kiểm tra tài khoản đã xác thực chưa
+            if (!user.getIsActive()) {
+                throw new RuntimeException("Tài khoản chưa được xác thực qua OTP");
+            }
+
+            // Kiểm tra mật khẩu
+            if (!passwordEncoder.matches(loginRequest.getPassWord(), user.getPassWord())) {
+                // Ghi nhận failed attempt
+                loginAttemptService.recordFailedAttempt(clientIp, loginRequest.getEmail());
+                throw new RuntimeException("Sai mật khẩu");
+            }
+
+            // Reset attempts khi login thành công
+            loginAttemptService.resetAttempts(clientIp, loginRequest.getEmail());
+
+            // Load UserDetails
+            final UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginRequest.getEmail());
+
+            // Tạo Access Token và Refresh Token
+            String accessToken = jwtUtil.generateToken(userDetails);
+            String refreshToken = jwtUtil.generateRefreshToken(userDetails);
+
+            return new AuthResponse(accessToken, refreshToken, user);
+
+        } catch (RuntimeException e) {
+            // Nếu là lỗi sai mật khẩu, đã được xử lý ở trên
+            throw e;
         }
-
-        // Load UserDetails
-        final UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginRequest.getEmail());
-
-        // Tạo Access Token và Refresh Token
-        String accessToken = jwtUtil.generateToken(userDetails);
-        String refreshToken = jwtUtil.generateRefreshToken(userDetails);
-
-        return new AuthResponse(accessToken, refreshToken, user);
     }
 
 

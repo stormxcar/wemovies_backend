@@ -4,6 +4,7 @@ import com.example.demo.models.auth.Role;
 import com.example.demo.models.auth.User;
 import com.example.demo.repositories.auth.RoleRepository;
 import com.example.demo.repositories.auth.UserRepository;
+import com.example.demo.repositories.auth.LoginAttemptRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,15 +12,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @SpringBootApplication
 @EnableJpaAuditing
 @EnableAsync
+@EnableScheduling
 public class DemoApplication {
+
+    @Autowired
+    private LoginAttemptRepository loginAttemptRepository;
 
     public static void main(String[] args) {
         SpringApplication.run(DemoApplication.class, args);
@@ -67,6 +75,13 @@ public class DemoApplication {
                 System.out.println("Admin user already exists");
             }
         };
+    }
+
+    @Scheduled(fixedRate = 3600000) // Run every hour (3600000 milliseconds)
+    public void cleanupExpiredLoginAttempts() {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusHours(1);
+        loginAttemptRepository.deleteOldAttempts(cutoffDate);
+        System.out.println("Cleaned up expired login attempts older than 1 hour");
     }
 
 }

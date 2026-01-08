@@ -43,7 +43,8 @@ public class SecurityConfig {
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
             "/api/auth/google",
-            "/api/auth/refresh"
+            "/api/auth/refresh",
+            "/api/auth/test-email"
     };
 
     @Bean("mainSecurityFilterChain")
@@ -66,10 +67,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/movies/**").permitAll() // Allow CRUD operations for movies
                         .requestMatchers("/api/countries/**").permitAll() // Allow CRUD operations for countries
                         // Protected routes with cookie consent check
-                        .requestMatchers("/api/reviews/**").access(cookieConsentAuthorizationManager)
-                        .requestMatchers("/api/watchlist/**").access(cookieConsentAuthorizationManager)
-                        .requestMatchers("/api/schedules/**").access(cookieConsentAuthorizationManager)
-                        .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password", "/api/auth/verifyUser").access(cookieConsentAuthorizationManager)
+                        .requestMatchers("/api/reviews/**").authenticated() // Remove cookie consent for reviews
+                        .requestMatchers("/api/watchlist/**").authenticated() // Remove cookie consent for watchlist
+                        .requestMatchers("/api/schedules/**").authenticated() // Remove cookie consent for schedules
+                        .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated() // Remove cookie consent for profile operations
+                        .requestMatchers("/api/auth/verifyUser").access(cookieConsentAuthorizationManager) // Keep for verifyUser (GDPR compliance)
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
