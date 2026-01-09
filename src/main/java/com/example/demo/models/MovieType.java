@@ -13,7 +13,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Table(name = "movie_type")
+@Table(name = "movie_type", indexes = {
+    @Index(name = "idx_movie_type_slug", columnList = "slug", unique = true)
+})
 public class MovieType extends BaseEntity {
     private String name;
+
+    @Column(unique = true)
+    private String slug;
 }

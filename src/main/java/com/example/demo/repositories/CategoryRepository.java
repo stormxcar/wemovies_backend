@@ -11,6 +11,12 @@ import java.util.UUID;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
+    // Find category by slug
+    Category findBySlug(String slug);
+
+    // Check if slug exists
+    boolean existsBySlug(String slug);
+
     // lâấy lượng phim theo id
     @Query(value = "SELECT COUNT(m.movie_id) FROM movie AS m " +
             "JOIN movie_category AS mc ON mc.movie_id = m.movie_id " +

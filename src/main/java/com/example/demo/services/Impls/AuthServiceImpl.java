@@ -388,4 +388,13 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Failed to upload avatar to Cloudinary: " + e.getMessage());
         }
     }
+
+    @Override
+    public Object getUserByEmail(String email) {
+        var user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+        return user;
+    }
 }

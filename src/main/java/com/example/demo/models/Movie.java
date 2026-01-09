@@ -20,9 +20,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Table(name = "movie")
+@Table(name = "movie", indexes = {
+    @Index(name = "idx_movie_slug", columnList = "slug", unique = true)
+})
 public class Movie extends BaseEntity {
     private String title;
+
+    @Column(unique = true)
+    private String slug;
 
     // bonus
     private String titleByLanguage;
@@ -53,6 +58,14 @@ public class Movie extends BaseEntity {
     private String link;
     private String thumb_url;
 
+    // Banner image for large background display
+    private String banner_url;
+
+    // Age rating for content classification
+    @Enumerated(EnumType.STRING)
+    @Column(name = "age_rating")
+    private AgeRating ageRating;
+
     @ManyToOne
     @JoinColumn(name = "country_id")
     private Country country;
@@ -80,6 +93,14 @@ public class Movie extends BaseEntity {
 
     public enum Quality {
         SD, HD, FULL_HD, _4K
+    }
+
+    public enum AgeRating {
+        P,      // Phù hợp mọi lứa tuổi
+        T7,     // Từ 7 tuổi trở lên
+        T13,    // Từ 13 tuổi trở lên
+        T16,    // Từ 16 tuổi trở lên
+        T18,    // Từ 18 tuổi trở lên
     }
 
     // Helper methods for actors

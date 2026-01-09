@@ -250,7 +250,16 @@ public class AuthController {
         authService.updateProfile(principal.getName(), request);
         return ResponseEntity.ok("Cập nhật hồ sơ thành công");
     }
-
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Principal principal) {
+        try {
+            var user = authService.getUserByEmail(principal.getName());
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi khi lấy thông tin profile: " + e.getMessage());
+        }
+    }
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/upload-avatar")
     public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file, Principal principal) {
@@ -265,12 +274,13 @@ public class AuthController {
         cookie.setSecure(true); // Always use HTTPS in production
         cookie.setPath("/");
         cookie.setMaxAge(24 * 60 * 60); // 24 hours
+        // Don't set domain for cross-origin cookies
 
         // Add the cookie to the response
         response.addCookie(cookie);
 
-        // Manually set the SameSite attribute
-        String sameSiteCookie = String.format("%s=%s; Path=%s; HttpOnly; Secure; Max-Age=%d; SameSite=Lax",
+        // Manually set the SameSite attribute - use None for cross-site
+        String sameSiteCookie = String.format("%s=%s; Path=%s; HttpOnly; Secure; Max-Age=%d; SameSite=None",
                 cookieName, token, "/", 24 * 60 * 60);
         response.addHeader("Set-Cookie", sameSiteCookie);
     }
@@ -321,6 +331,24 @@ public class AuthController {
         }
 
         return ipAddress;
+    }
+
+    @PostMapping("/test-email")
+    public ResponseEntity<String> testEmail(@RequestParam("email") String email) {
+        try {
+            System.out.println("=== TESTING EMAIL CONFIGURATION ===");
+            System.out.println("Sending test email to: " + email);
+
+            String subject = "Test Email - WeMovies";
+            String content = "<h2>Test Email</h2><p>This is a test email from WeMovies backend.</p><p>Sent at: " + java.time.LocalDateTime.now() + "</p>";
+
+            emailService.sendEmail(email, subject, content);
+
+            return ResponseEntity.ok("Test email sent successfully to: " + email);
+        } catch (Exception e) {
+            System.err.println("❌ Test email failed: " + e.getMessage());
+            return ResponseEntity.status(500).body("Failed to send test email: " + e.getMessage());
+        }
     }
 
     private boolean hasNecessaryCookieConsent(HttpServletRequest request) {

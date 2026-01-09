@@ -20,6 +20,12 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
 
     List<Movie> findByTitle(String title);
 
+    // Find movie by slug
+    Movie findBySlug(String slug);
+
+    // Check if slug exists
+    boolean existsBySlug(String slug);
+
     @Query("SELECT m FROM Movie m JOIN m.movieCategories c WHERE c.name = :categoryName")
     List<Movie> getMoviesByCategory(@Param("categoryName") String categoryName);
 

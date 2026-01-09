@@ -8,6 +8,7 @@ import java.util.UUID;
 public interface MovieTypeSevice {
     List<MovieType> getAllMovieTypes();
     MovieType getMovieTypeById(UUID id);
+    MovieType getMovieTypeBySlug(String slug);
     MovieType saveMovieType(MovieType movieType);
     void deleteMovieTypeById(UUID id);
 

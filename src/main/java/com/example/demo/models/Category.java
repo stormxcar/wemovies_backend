@@ -12,7 +12,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Table(name = "category")
+@Table(name = "category", indexes = {
+    @Index(name = "idx_category_slug", columnList = "slug", unique = true)
+})
 public class Category extends BaseEntity {
     private String name;
+
+    @Column(unique = true)
+    private String slug;
 }

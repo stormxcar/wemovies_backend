@@ -10,6 +10,7 @@ public interface CategoryService {
     List<Category> getAllCategory();
 
     Category getCategoryById(UUID id);
+    Category getCategoryBySlug(String slug);
     List<Category> getCategoriesByIds(List<UUID> ids);
 
     Category saveCategory(Category category);

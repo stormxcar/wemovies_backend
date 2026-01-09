@@ -11,6 +11,7 @@ public interface MovieService {
 
     List<Movie> getAllMovies();
     Movie getMovieById(UUID id);
+    Movie getMovieBySlug(String slug);
     Movie saveMovie(Movie movie);
     Movie updateMovie(UUID id, Movie updatedMovie);
     void deleteMovie(UUID id);

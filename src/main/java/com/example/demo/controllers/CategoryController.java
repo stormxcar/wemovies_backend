@@ -59,6 +59,19 @@ public class CategoryController {
         }
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ApiResponse<Category>> getCategoryBySlug(@PathVariable String slug) {
+        try {
+            Category category = categoryService.getCategoryBySlug(slug);
+            if (category == null) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Category not found", null), HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Category retrieved successfully", category));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving the category", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable("id") UUID id) {
         try {

@@ -58,6 +58,19 @@ public class MovieTypeController {
         }
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ApiResponse<MovieType>> getMovieTypeBySlug(@PathVariable String slug) {
+        try {
+            MovieType movieType = movieTypeSevice.getMovieTypeBySlug(slug);
+            if (movieType == null) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Movie type not found", null), HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movie type retrieved successfully", movieType));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving the movie type", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMovieType(@PathVariable("id") UUID id) {
         try {

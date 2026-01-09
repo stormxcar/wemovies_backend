@@ -4,6 +4,13 @@ import com.example.demo.config.root.ResourceNotFoundException;
 import com.example.demo.models.Movie;
 import com.example.demo.repositories.MovieRepository;
 import com.example.demo.services.MovieService;
+import com.example.demo.services.SlugService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.data.domain.Page;
@@ -23,6 +30,9 @@ public class MovieServiceImpl implements MovieService {
     @Autowired
     private MovieRepository movieRepository;
 
+    @Autowired
+    private SlugService slugService;
+
     @Override
     public Page<Movie> getMoviesByPage(int pageNumber, int pageSize) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
@@ -40,7 +50,16 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    public Movie getMovieBySlug(String slug) {
+        return movieRepository.findBySlug(slug);
+    }
+
+    @Override
     public Movie saveMovie(Movie movie) {
+        // Generate slug if not set
+        if (movie.getSlug() == null || movie.getSlug().trim().isEmpty()) {
+            slugService.generateMovieSlug(movie);
+        }
         return movieRepository.save(movie);
     }
 

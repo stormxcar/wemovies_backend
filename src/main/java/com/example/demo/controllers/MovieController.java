@@ -66,6 +66,19 @@ public class MovieController {
         }
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ApiResponse<Movie>> getMovieBySlug(@PathVariable String slug) {
+        try {
+            Movie movie = movieService.getMovieBySlug(slug);
+            if (movie == null) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Movie not found", null), HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movie retrieved successfully", movie));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving the movie", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/addPage")
     public ResponseEntity<ApiResponse<Object>> addPage() {
         try {
@@ -94,6 +107,8 @@ public class MovieController {
                                                        @RequestParam("status") String status,
                                                        @RequestParam(value = "thumb_url", required = false) String thumbUrl,
                                                        @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+                                                       @RequestParam(value = "banner_url", required = false) String bannerUrl,
+                                                       @RequestParam(value = "bannerFile", required = false) MultipartFile bannerFile,
                                                        @RequestParam("titleByLanguage") String titleByLanguage,
                                                        @RequestParam(value = "totalEpisodes", required = false) Integer totalEpisodes,
                                                        @RequestParam("trailer") String trailer,
@@ -102,7 +117,8 @@ public class MovieController {
                                                        @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
                                                        @RequestParam("countryId") UUID countryId,
                                                        @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
-                                                       @RequestParam("categoryIds") List<UUID> categoryIds) {
+                                                       @RequestParam("categoryIds") List<UUID> categoryIds,
+                                                       @RequestParam(value = "ageRating", required = false) String ageRating) {
         try {
             // Create Movie object from parameters
             Movie movie = new Movie();
@@ -121,6 +137,20 @@ public class MovieController {
                 return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload thumbnail: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
+            // Handle banner upload
+            String finalBannerUrl = null;
+            try {
+                if (bannerFile != null && !bannerFile.isEmpty()) {
+                    // Upload file to Cloudinary
+                    finalBannerUrl = cloudinaryService.uploadFile(bannerFile);
+                } else if (bannerUrl != null && !bannerUrl.trim().isEmpty()) {
+                    // Upload URL to Cloudinary
+                    finalBannerUrl = cloudinaryService.uploadFromUrl(bannerUrl);
+                }
+            } catch (Exception e) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload banner: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
             movie.setDescription(description);
             movie.setDirector(director);
             movie.setDuration(duration);
@@ -130,10 +160,20 @@ public class MovieController {
             movie.setRelease_year(Year.of(releaseYear));
             movie.setStatus(status);
             movie.setThumb_url(finalThumbUrl);
+            movie.setBanner_url(finalBannerUrl);
             movie.setTitleByLanguage(titleByLanguage);
             movie.setTotalEpisodes(totalEpisodes);
             movie.setTrailer(trailer);
             movie.setVietSub(vietSub);
+
+            // Set age rating if provided
+            if (ageRating != null && !ageRating.trim().isEmpty()) {
+                try {
+                    movie.setAgeRating(Movie.AgeRating.valueOf(ageRating.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    return new ResponseEntity<>(new ApiResponse<>(false, "Invalid age rating: " + ageRating + ". Valid values: P, T7, T13, T16, T18, T21", null), HttpStatus.BAD_REQUEST);
+                }
+            }
 
             Set<String> actorSet = new HashSet<>();
             for (String actor : actors) {
@@ -246,6 +286,8 @@ public class MovieController {
                                                           @RequestParam("status") String status,
                                                           @RequestParam(value = "thumb_url", required = false) String thumbUrl,
                                                           @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+                                                          @RequestParam(value = "banner_url", required = false) String bannerUrl,
+                                                          @RequestParam(value = "bannerFile", required = false) MultipartFile bannerFile,
                                                           @RequestParam("titleByLanguage") String titleByLanguage,
                                                           @RequestParam(value = "totalEpisodes", required = false) Integer totalEpisodes,
                                                           @RequestParam("trailer") String trailer,
@@ -254,7 +296,8 @@ public class MovieController {
                                                           @RequestParam(value = "episodeLinks", required = false) List<String> episodeLinks,
                                                           @RequestParam("countryId") UUID countryId,
                                                           @RequestParam("movieTypeIds") List<UUID> movieTypeIds,
-                                                          @RequestParam("categoryIds") List<UUID> categoryIds) {
+                                                          @RequestParam("categoryIds") List<UUID> categoryIds,
+                                                          @RequestParam(value = "ageRating", required = false) String ageRating) {
 
         try {
             Movie existingMovie = movieService.getMovieById(id);
@@ -276,6 +319,20 @@ public class MovieController {
                 return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload thumbnail: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
+            // Handle banner upload
+            String finalBannerUrl = existingMovie.getBanner_url(); // Keep existing if no new upload
+            try {
+                if (bannerFile != null && !bannerFile.isEmpty()) {
+                    // Upload file to Cloudinary
+                    finalBannerUrl = cloudinaryService.uploadFile(bannerFile);
+                } else if (bannerUrl != null && !bannerUrl.trim().isEmpty() && !bannerUrl.equals(existingMovie.getBanner_url())) {
+                    // Upload URL to Cloudinary only if it's different from current
+                    finalBannerUrl = cloudinaryService.uploadFromUrl(bannerUrl);
+                }
+            } catch (Exception e) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload banner: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
             // Update fields
             existingMovie.setTitle(title);
             existingMovie.setDescription(description);
@@ -287,10 +344,23 @@ public class MovieController {
             existingMovie.setRelease_year(Year.of(releaseYear));
             existingMovie.setStatus(status);
             existingMovie.setThumb_url(finalThumbUrl);
+            existingMovie.setBanner_url(finalBannerUrl);
             existingMovie.setTitleByLanguage(titleByLanguage);
             existingMovie.setTotalEpisodes(totalEpisodes);
             existingMovie.setTrailer(trailer);
             existingMovie.setVietSub(vietSub);
+
+            // Update age rating if provided
+            if (ageRating != null && !ageRating.trim().isEmpty()) {
+                try {
+                    existingMovie.setAgeRating(Movie.AgeRating.valueOf(ageRating.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    return new ResponseEntity<>(new ApiResponse<>(false, "Invalid age rating: " + ageRating + ". Valid values: P, T7, T13, T16, T18, T21", null), HttpStatus.BAD_REQUEST);
+                }
+            } else {
+                // Keep existing age rating if not provided
+                existingMovie.setAgeRating(existingMovie.getAgeRating());
+            }
 
             Set<String> actorSet = new HashSet<>();
             for (String actor : actors) {
@@ -355,10 +425,13 @@ public class MovieController {
         }
     }
 
-    @GetMapping("/detail/{id}")
-    public ResponseEntity<ApiResponse<Movie>> detailMovie(@PathVariable UUID id) {
+    @GetMapping("/detail/{slug}")
+    public ResponseEntity<ApiResponse<Movie>> detailMovie(@PathVariable String slug) {
         try {
-            Movie movie = movieService.getMovieById(id);
+            Movie movie = movieService.getMovieBySlug(slug);
+            if (movie == null) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Movie not found", null), HttpStatus.NOT_FOUND);
+            }
             return ResponseEntity.ok(new ApiResponse<>(true, "Movie details retrieved successfully", movie));
         } catch (Exception e) {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving movie details", null), HttpStatus.INTERNAL_SERVER_ERROR);

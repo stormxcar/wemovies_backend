@@ -41,12 +41,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Đọc token từ cookie
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
+            System.out.println("Found " + cookies.length + " cookies:");
             for (Cookie cookie : cookies) {
+                System.out.println("  Cookie: " + cookie.getName() + " = " + (cookie.getName().equals("jwtToken") ? "[HIDDEN]" : cookie.getValue()));
                 if ("jwtToken".equals(cookie.getName())) {
                     token = cookie.getValue();
+                    System.out.println("  Found jwtToken cookie with value: " + (token != null ? "[PRESENT]" : "[NULL]"));
                     break;
                 }
             }
+        } else {
+            System.out.println("No cookies found in request");
         }
 
         // Nếu không tìm thấy token trong cookie, có thể đọc từ header Authorization (tùy chọn)
@@ -54,7 +59,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String authorizationHeader = request.getHeader("Authorization");
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                 token = authorizationHeader.substring(7);
+                System.out.println("Found token in Authorization header: [PRESENT]");
+            } else {
+                System.out.println("No Authorization header or invalid format");
             }
+        }
+
+        if (token == null) {
+            System.out.println("⚠️ No JWT token found for protected endpoint: " + request.getRequestURI());
         }
 
         // Xử lý token

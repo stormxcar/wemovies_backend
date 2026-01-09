@@ -3,6 +3,7 @@ package com.example.demo.services.Impls;
 import com.example.demo.models.Category;
 import com.example.demo.repositories.CategoryRepository;
 import com.example.demo.services.CategoryService;
+import com.example.demo.services.SlugService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private SlugService slugService;
+
     @Override
     public List<Category> getAllCategory() {
         return categoryRepository.findAll(); // Trả về danh sách Category
@@ -27,12 +31,21 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public Category getCategoryBySlug(String slug) {
+        return categoryRepository.findBySlug(slug);
+    }
+
+    @Override
     public List<Category> getCategoriesByIds(List<UUID> ids) {
         return categoryRepository.findAllById(ids);
     }
 
     @Override
     public Category saveCategory(Category category) {
+        // Generate slug if not set
+        if (category.getSlug() == null || category.getSlug().trim().isEmpty()) {
+            slugService.generateCategorySlug(category);
+        }
         return categoryRepository.save(category); // Lưu Category
     }
 
