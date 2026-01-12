@@ -22,6 +22,11 @@ public class CountryServiceImpl implements CountryService {
     public Country getCountryById(UUID id) {
         return countryRepositories.findById(id).orElse(null);
     }
+    
+    @Override
+    public Country getCountryBySlug(String slug) {
+        return countryRepositories.findBySlug(slug);
+    }
 
     @Override
     public Country saveCountry(Country country) {

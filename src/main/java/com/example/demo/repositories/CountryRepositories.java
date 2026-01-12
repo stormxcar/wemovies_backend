@@ -14,4 +14,6 @@ public interface CountryRepositories extends JpaRepository<Country, UUID> {
             "JOIN country AS c ON c.country_id = m.country_id\n" +
             "WHERE c.country_id = :countryId", nativeQuery = true)
     int countMoviesByCountryId(@Param("countryId") UUID countryId);
+    
+    Country findBySlug(String slug);
 }

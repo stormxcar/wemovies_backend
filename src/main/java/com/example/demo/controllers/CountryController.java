@@ -53,6 +53,19 @@ public class CountryController {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while updating the country", null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ApiResponse<Country>> getCountryBySlug(@PathVariable String slug) {
+        try {
+            Country country = countryService.getCountryBySlug(slug);
+            if (country == null) {
+                return new ResponseEntity<>(new ApiResponse<>(false, "Country not found", null), HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Country retrieved successfully", country));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving the country", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCountry(@PathVariable("id") UUID id) {

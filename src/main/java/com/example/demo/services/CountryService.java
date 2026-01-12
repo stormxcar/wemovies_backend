@@ -8,6 +8,7 @@ import java.util.UUID;
 public interface CountryService {
     List<Country> getAllCountries();
     Country getCountryById(UUID id);
+    Country getCountryBySlug(String slug);
     Country saveCountry(Country country);
     void deleteCountry(UUID id);
 
