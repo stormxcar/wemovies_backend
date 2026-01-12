@@ -47,6 +47,11 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
         if (viewingScheduleRepository.existsByUserAndMovieIdAndStatus(user, request.getMovieId(), ScheduleStatus.PENDING)) {
             throw new IllegalArgumentException("Bạn đã có lịch xem phim đang chờ xử lý cho bộ phim này");
         }
+        
+        // Validate scheduledDateTime for non-WATCH_LATER schedules
+        if (request.getScheduledDateTime() == null) {
+            throw new IllegalArgumentException("Thời gian lên lịch là bắt buộc");
+        }
 
         ViewingSchedule schedule = ViewingSchedule.builder()
                 .user(user)
@@ -91,6 +96,9 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
 
         if (request.getScheduledDateTime() != null) {
             schedule.setScheduledDateTime(request.getScheduledDateTime());
+        } else if (schedule.getStatus() != ScheduleStatus.WATCH_LATER) {
+            // Only require scheduledDateTime for non-WATCH_LATER schedules
+            throw new IllegalArgumentException("Thời gian lên lịch là bắt buộc cho lịch xem phim");
         }
         schedule.setReminderEnabled(request.isReminderEnabled());
         schedule.setNotes(request.getNotes());
@@ -161,5 +169,55 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
                 .createdAt(schedule.getCreatedAt())
                 .updatedAt(schedule.getUpdatedAt())
                 .build();
+    }
+    
+    // Watch Later functionality implementation
+    @Override
+    @Transactional
+    public ViewingScheduleResponse addToWatchLater(UUID movieId, User user) {
+        // Validate movie exists
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
+        
+        // Check if movie is already in watch later list
+        if (viewingScheduleRepository.existsByUserAndMovieIdAndStatus(user, movieId, ScheduleStatus.WATCH_LATER)) {
+            throw new IllegalArgumentException("Phim này đã có trong danh sách xem sau");
+        }
+        
+        // Check if movie is already scheduled
+        if (viewingScheduleRepository.existsByUserAndMovieIdAndStatus(user, movieId, ScheduleStatus.PENDING)) {
+            throw new IllegalArgumentException("Phim này đã được lên lịch xem");
+        }
+        
+        ViewingSchedule watchLaterSchedule = ViewingSchedule.builder()
+                .user(user)
+                .movie(movie)
+                .scheduledDateTime(null) // No specific time for watch later
+                .reminderEnabled(false)
+                .notes("Thêm vào danh sách xem sau")
+                .status(ScheduleStatus.WATCH_LATER)
+                .build();
+        
+        ViewingSchedule saved = viewingScheduleRepository.save(watchLaterSchedule);
+        return mapToResponse(saved);
+    }
+    
+    @Override
+    public List<ViewingScheduleResponse> getWatchLaterList(User user) {
+        List<ViewingSchedule> watchLaterSchedules = viewingScheduleRepository
+                .findByUserAndStatusOrderByCreatedAtDesc(user, ScheduleStatus.WATCH_LATER);
+        return watchLaterSchedules.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional
+    public void removeFromWatchLater(UUID movieId, User user) {
+        ViewingSchedule watchLaterSchedule = viewingScheduleRepository
+                .findByUserAndMovieIdAndStatus(user, movieId, ScheduleStatus.WATCH_LATER)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phim trong danh sách xem sau"));
+        
+        viewingScheduleRepository.delete(watchLaterSchedule);
     }
 }

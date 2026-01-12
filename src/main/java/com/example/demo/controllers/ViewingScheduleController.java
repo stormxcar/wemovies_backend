@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -80,5 +81,41 @@ public class ViewingScheduleController {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
         boolean isScheduled = viewingScheduleService.isMovieScheduledByUser(user, movieId);
         return ResponseEntity.ok(isScheduled);
+    }
+    
+    // Watch Later functionality
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/watch-later")
+    public ResponseEntity<ViewingScheduleResponse> addToWatchLater(
+            @RequestBody Map<String, UUID> request, 
+            Principal principal) {
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        UUID movieId = request.get("movieId");
+        if (movieId == null) {
+            throw new IllegalArgumentException("Movie ID is required");
+        }
+        ViewingScheduleResponse response = viewingScheduleService.addToWatchLater(movieId, user);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/watch-later")
+    public ResponseEntity<List<ViewingScheduleResponse>> getWatchLaterList(Principal principal) {
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        List<ViewingScheduleResponse> watchLaterList = viewingScheduleService.getWatchLaterList(user);
+        return ResponseEntity.ok(watchLaterList);
+    }
+    
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/watch-later/{movieId}")
+    public ResponseEntity<String> removeFromWatchLater(
+            @PathVariable UUID movieId, 
+            Principal principal) {
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        viewingScheduleService.removeFromWatchLater(movieId, user);
+        return ResponseEntity.ok("Đã xóa khỏi danh sách xem sau");
     }
 }

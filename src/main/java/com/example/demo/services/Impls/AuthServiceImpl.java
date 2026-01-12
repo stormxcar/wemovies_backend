@@ -183,7 +183,6 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-
     @Override
     public void requestOtp(RegisterRequest request) {
         // Kiểm tra domain email hợp lệ trước khi gửi OTP

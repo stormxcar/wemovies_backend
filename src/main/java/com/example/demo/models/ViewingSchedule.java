@@ -30,8 +30,7 @@ public class ViewingSchedule extends BaseEntity {
     @NotNull(message = "Phim là bắt buộc")
     private Movie movie;
 
-    @Column(name = "scheduled_date_time", nullable = false)
-    @NotNull(message = "Thời gian lên lịch là bắt buộc")
+    @Column(name = "scheduled_date_time")
     @Future(message = "Thời gian lên lịch phải là trong tương lai")
     private LocalDateTime scheduledDateTime;
 

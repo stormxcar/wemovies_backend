@@ -21,4 +21,11 @@ public interface ViewingScheduleService {
     boolean isMovieScheduledByUser(User user, UUID movieId);
 
     void sendReminders();
+    
+    // Watch Later functionality
+    ViewingScheduleResponse addToWatchLater(UUID movieId, User user);
+    
+    List<ViewingScheduleResponse> getWatchLaterList(User user);
+    
+    void removeFromWatchLater(UUID movieId, User user);
 }

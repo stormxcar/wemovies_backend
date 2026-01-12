@@ -16,6 +16,8 @@ import java.util.UUID;
 public interface ViewingScheduleRepository extends JpaRepository<ViewingSchedule, UUID> {
 
     List<ViewingSchedule> findByUserAndStatusOrderByScheduledDateTimeAsc(User user, ScheduleStatus status);
+    
+    List<ViewingSchedule> findByUserAndStatusOrderByCreatedAtDesc(User user, ScheduleStatus status);
 
     List<ViewingSchedule> findByUserAndScheduledDateTimeBetween(User user, LocalDateTime start, LocalDateTime end);
 
@@ -23,4 +25,6 @@ public interface ViewingScheduleRepository extends JpaRepository<ViewingSchedule
     List<ViewingSchedule> findPendingReminders(@Param("now") LocalDateTime now, @Param("status") ScheduleStatus status);
 
     boolean existsByUserAndMovieIdAndStatus(User user, UUID movieId, ScheduleStatus status);
+    
+    java.util.Optional<ViewingSchedule> findByUserAndMovieIdAndStatus(User user, UUID movieId, ScheduleStatus status);
 }
