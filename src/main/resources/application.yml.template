@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: demo
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 30000
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  
+  server:
+    port: ${PORT:8080}  # Render tự set PORT
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
+          ssl:
+            trust: smtp.gmail.com
+
+  redis:
+    # Upstash Redis Configuration
+    url: ${UPSTASH_REDIS_REST_URL}
+    token: ${UPSTASH_REDIS_REST_TOKEN}
+    # Traditional Redis fallback
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    ssl: ${REDIS_SSL:false}
+    timeout: ${REDIS_TIMEOUT:3000ms}
+    connect-timeout: ${REDIS_CONNECT_TIMEOUT:10000ms}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access:
+    expiration: ${JWT_ACCESS_EXPIRATION:86400000}
+  refresh:
+    expiration: ${JWT_REFRESH_EXPIRATION:604800000} 
+
+logging:
+  level:
+    org.springframework: ${SPRING_LOG_LEVEL:INFO}  
+    org.springframework.boot.autoconfigure: ${SPRING_BOOT_LOG_LEVEL:INFO}
+    com.example.demo.config: ${APP_CONFIG_LOG_LEVEL:DEBUG} 
+    org.hibernate: ${HIBERNATE_LOG_LEVEL:DEBUG}    
+    com:
+      google:
+        api:
+          client: ${GOOGLE_LOG_LEVEL:DEBUG}
+    io:
+      jsonwebtoken: ${JWT_LOG_LEVEL:DEBUG}
+    org.springframework.mail: ${MAIL_LOG_LEVEL:DEBUG}
+
+cloudinary:
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}
+
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
