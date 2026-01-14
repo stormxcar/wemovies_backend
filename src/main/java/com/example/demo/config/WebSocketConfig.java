@@ -30,7 +30,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket endpoint cho client kết nối
         registry.addEndpoint("/ws-notifications")
-                .setAllowedOriginPatterns("*") // Production: set specific domains
+                .setAllowedOriginPatterns(
+                    "https://wemovies-frontend.vercel.app",
+                    "http://localhost:3000", 
+                    "https://localhost:3000",
+                    "https://wemovies-backend.onrender.com"
+                ) // Allow specific origins for production
                 .withSockJS(); // Fallback support for older browsers
     }
 }

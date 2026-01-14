@@ -4,6 +4,7 @@ import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.models.Notification;
 import com.example.demo.services.NotificationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,9 @@ public class NotificationController {
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
     
     /**
      * WebSocket message handler - Client subscribe to notifications
@@ -262,6 +266,63 @@ public class NotificationController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(
                 new ApiResponse<>(false, "Error sending notification: " + e.getMessage(), null)
+            );
+        }
+    }
+    
+    /**
+     * ADMIN API: Tạo thông báo broadcast cho tất cả users
+     * POST /api/notifications/broadcast
+     */
+    @PostMapping("/broadcast")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createBroadcastNotification(
+            @RequestParam String type,
+            @RequestParam String title,
+            @RequestParam String message,
+            @RequestParam(required = false) String actionUrl,
+            @RequestParam(required = false) String metadata) {
+        
+        try {
+            Notification.NotificationType notificationType = Notification.NotificationType.valueOf(type);
+            
+            Map<String, Object> metadataMap = null;
+            if (metadata != null && !metadata.trim().isEmpty()) {
+                // Parse metadata as JSON or simple key=value
+                try {
+                    metadataMap = objectMapper.readValue(metadata, Map.class);
+                } catch (Exception e) {
+                    metadataMap = Map.of("custom", metadata, "sender", "admin");
+                }
+            }
+            
+            notificationService.sendBroadcastToAllUsers(
+                notificationType,
+                title,
+                message,
+                actionUrl,
+                null, // No related movie for general broadcasts
+                metadataMap
+            );
+            
+            Map<String, Object> responseData = Map.of(
+                "type", type,
+                "title", title,
+                "message", message,
+                "actionUrl", actionUrl,
+                "target", "ALL_USERS",
+                "timestamp", System.currentTimeMillis()
+            );
+            
+            return ResponseEntity.ok(new ApiResponse<>(true, "Broadcast notification sent to all users successfully", responseData));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                new ApiResponse<>(false, "Invalid notification type: " + type + ". Valid types: " + 
+                    java.util.Arrays.toString(Notification.NotificationType.values()), null)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(
+                new ApiResponse<>(false, "Error sending broadcast notification: " + e.getMessage(), null)
             );
         }
     }

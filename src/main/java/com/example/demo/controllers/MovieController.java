@@ -8,6 +8,7 @@ import com.example.demo.services.CategoryService;
 import com.example.demo.services.CountryService;
 import com.example.demo.services.MovieService;
 import com.example.demo.services.MovieTypeSevice;
+import com.example.demo.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,6 +41,9 @@ public class MovieController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @GetMapping()
     public ResponseEntity<ApiResponse<List<Movie>>> movies() {
@@ -220,6 +225,29 @@ public class MovieController {
             }
 
             Movie savedMovie = movieService.saveMovie(movie);
+            
+            // Gửi thông báo realtime cho tất cả users về phim mới
+            try {
+                String movieUrl = "/movies/" + savedMovie.getId();
+                notificationService.sendBroadcastToAllUsers(
+                    Notification.NotificationType.NEW_MOVIE,
+                    "🎬 Phim mới: " + savedMovie.getTitle(),
+                    "Phim '" + savedMovie.getTitle() + "' vừa được thêm vào thư viện. Xem ngay!",
+                    movieUrl,
+                    savedMovie,
+                    Map.of(
+                        "movieId", savedMovie.getId().toString(),
+                        "movieTitle", savedMovie.getTitle(),
+                        "releaseYear", savedMovie.getRelease_year() != null ? savedMovie.getRelease_year().toString() : null,
+                        "quality", savedMovie.getQuality(),
+                        "addedAt", System.currentTimeMillis()
+                    )
+                );
+            } catch (Exception e) {
+                // Log error but don't fail the movie creation
+                System.err.println("Failed to send new movie notification: " + e.getMessage());
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Movie added successfully", savedMovie));
         } catch (Exception e) {
             e.printStackTrace();

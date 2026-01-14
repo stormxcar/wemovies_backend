@@ -30,7 +30,15 @@ public class ReviewServiceImpl implements ReviewService {
     public void addOrUpdateReview(String email, String movieId, Integer rating, String comment) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Movie movie = movieRepository.findById(UUID.fromString(movieId))
+        
+        UUID movieUUID;
+        try {
+            movieUUID = UUID.fromString(movieId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid movie ID format: " + movieId);
+        }
+        
+        Movie movie = movieRepository.findById(movieUUID)
                 .orElseThrow(() -> new RuntimeException("Movie not found"));
 
         if (rating < 1 || rating > 5) {
@@ -57,7 +65,15 @@ public class ReviewServiceImpl implements ReviewService {
     public void deleteReview(String email, String movieId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Movie movie = movieRepository.findById(UUID.fromString(movieId))
+        
+        UUID movieUUID;
+        try {
+            movieUUID = UUID.fromString(movieId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid movie ID format: " + movieId);
+        }
+        
+        Movie movie = movieRepository.findById(movieUUID)
                 .orElseThrow(() -> new RuntimeException("Movie not found"));
 
         Review review = reviewRepository.findByUserAndMovie(user, movie)
@@ -67,12 +83,24 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public List<Review> getReviewsByMovie(String movieId) {
-        return reviewRepository.findByMovieId(UUID.fromString(movieId));
+        UUID movieUUID;
+        try {
+            movieUUID = UUID.fromString(movieId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid movie ID format: " + movieId);
+        }
+        return reviewRepository.findByMovieId(movieUUID);
     }
 
     @Override
     public double getAverageRating(String movieId) {
-        List<Review> reviews = reviewRepository.findByMovieId(UUID.fromString(movieId));
+        UUID movieUUID;
+        try {
+            movieUUID = UUID.fromString(movieId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid movie ID format: " + movieId);
+        }
+        List<Review> reviews = reviewRepository.findByMovieId(movieUUID);
         if (reviews.isEmpty()) return 0.0;
         return reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
     }

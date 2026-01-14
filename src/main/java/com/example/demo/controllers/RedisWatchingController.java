@@ -34,14 +34,120 @@ public class RedisWatchingController {
      */
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> startWatching(
-            @RequestParam String userId,
-            @RequestParam String movieId,
-            @RequestParam String movieTitle,
-            @RequestParam(defaultValue = "7200") int totalDuration) {
+            @RequestBody Map<String, Object> request) {
 
         Map<String, Object> result = new HashMap<>();
 
         try {
+            // Extract parameters from request body
+            String userId = (String) request.get("userId");
+            String movieId = (String) request.get("movieId");
+            String movieTitle = (String) request.get("movieTitle");
+            Integer totalDuration = request.get("totalDuration") != null ?
+                ((Number) request.get("totalDuration")).intValue() : 7200;
+
+            // Validate required parameters
+            if (userId == null || userId.trim().isEmpty()) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ userId is required!");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            if (movieId == null || movieId.trim().isEmpty()) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ movieId is required!");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            if (movieTitle == null || movieTitle.trim().isEmpty()) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ movieTitle is required!");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            // Tạo watching detail
+            Map<String, Object> watchingDetail = new HashMap<>();
+            watchingDetail.put("movieId", movieId);
+            watchingDetail.put("movieTitle", movieTitle);
+            watchingDetail.put("currentTime", 0);
+            watchingDetail.put("totalDuration", totalDuration);
+            watchingDetail.put("percentage", 0.0);
+            watchingDetail.put("startedAt", LocalDateTime.now());
+            watchingDetail.put("lastWatched", LocalDateTime.now());
+
+            // Lưu vào Redis
+            String listKey = WATCHING_LIST + userId;
+            String detailKey = WATCHING_DETAIL + userId + ":" + movieId;
+            String liveKey = LIVE_SESSION + userId + ":" + movieId;
+
+            // Thêm vào danh sách đang xem (TTL 7 ngày)
+            redisTemplate.opsForSet().add(listKey, movieId);
+            redisTemplate.expire(listKey, 7, TimeUnit.DAYS);
+
+            // Lưu chi tiết (TTL 30 ngày)
+            redisTemplate.opsForValue().set(detailKey, watchingDetail, 30, TimeUnit.DAYS);
+
+            // Tạo live session (TTL 5 phút)
+            Map<String, Object> liveSession = new HashMap<>();
+            liveSession.put("userId", userId);
+            liveSession.put("movieId", movieId);
+            liveSession.put("isActive", true);
+            liveSession.put("lastHeartbeat", LocalDateTime.now());
+
+            redisTemplate.opsForValue().set(liveKey, liveSession, 5, TimeUnit.MINUTES);
+
+            result.put("status", "SUCCESS");
+            result.put("message", "✅ Bắt đầu xem phim thành công!");
+            result.put("watchingDetail", watchingDetail);
+            result.put("timestamp", LocalDateTime.now());
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            result.put("status", "ERROR");
+            result.put("message", "❌ Lỗi khi bắt đầu xem phim!");
+            result.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(result);
+        }
+    }
+
+    /**
+     * Bắt đầu xem phim (Alternative endpoint với JSON body)
+     * POST /api/redis-watching/start-json
+     */
+    @PostMapping("/start-json")
+    public ResponseEntity<Map<String, Object>> startWatchingJson(
+            @RequestBody Map<String, Object> request) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // Extract parameters from JSON body
+            String userId = (String) request.get("userId");
+            String movieId = (String) request.get("movieId");
+            String movieTitle = (String) request.get("movieTitle");
+            Integer totalDuration = request.get("totalDuration") != null ?
+                ((Number) request.get("totalDuration")).intValue() : 7200;
+
+            // Validate required parameters
+            if (userId == null || userId.trim().isEmpty()) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ userId is required!");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            if (movieId == null || movieId.trim().isEmpty()) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ movieId is required!");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            if (movieTitle == null || movieTitle.trim().isEmpty()) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ movieTitle is required!");
+                return ResponseEntity.badRequest().body(result);
+            }
+
             // Tạo watching detail
             Map<String, Object> watchingDetail = new HashMap<>();
             watchingDetail.put("movieId", movieId);

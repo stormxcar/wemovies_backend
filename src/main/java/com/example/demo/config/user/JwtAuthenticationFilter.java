@@ -34,7 +34,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        System.out.println("JWT Filter processing: " + request.getMethod() + " " + request.getRequestURI());
+        String requestURI = request.getRequestURI();
+        
+        // Skip JWT processing for WebSocket endpoints
+        if (requestURI.startsWith("/ws-notifications/") || requestURI.startsWith("/ws/")) {
+            System.out.println("Skipping JWT filter for WebSocket endpoint: " + requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        System.out.println("JWT Filter processing: " + request.getMethod() + " " + requestURI);
 
         String token = null;
 

@@ -107,6 +107,20 @@ public class NotificationService {
     }
     
     /**
+     * Gửi thông báo broadcast cho tất cả users
+     */
+    @Async
+    public void sendBroadcastToAllUsers(Notification.NotificationType type, String title, 
+                                      String message, String actionUrl, Movie relatedMovie, 
+                                      Map<String, Object> metadata) {
+        List<User> allUsers = userRepository.findAll();
+        for (User user : allUsers) {
+            sendRealTimeNotification(user.getId().toString(), type, title, message, 
+                                   actionUrl, relatedMovie, metadata);
+        }
+    }
+    
+    /**
      * Lấy danh sách thông báo của user
      */
     public Page<NotificationResponse> getNotifications(String userId, int page, int size) {

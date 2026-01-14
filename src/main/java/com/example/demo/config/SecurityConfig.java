@@ -67,8 +67,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/**").permitAll() // Allow CRUD operations for categories
                         .requestMatchers("/api/movies/**").permitAll() // Allow CRUD operations for movies
                         .requestMatchers("/api/countries/**").permitAll() // Allow CRUD operations for countries
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll() // Allow GET reviews and ratings publicly
+                        .requestMatchers("/ws-notifications/**").permitAll() // Allow WebSocket connections and handshake
+                        .requestMatchers("/ws/**").permitAll() // Allow all WebSocket related endpoints
                         // Protected routes with cookie consent check
-                        .requestMatchers("/api/reviews/**").authenticated() // Remove cookie consent for reviews
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // Require auth for POST reviews
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated() // Require auth for DELETE reviews
                         .requestMatchers("/api/watchlist/**").authenticated() // Remove cookie consent for watchlist
                         .requestMatchers("/api/schedules/**").authenticated() // Remove cookie consent for schedules
                         .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated() // Remove cookie consent for profile operations

@@ -52,34 +52,58 @@ public class ViewingScheduleController {
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{scheduleId}")
     public ResponseEntity<ViewingScheduleResponse> updateSchedule(
-            @PathVariable UUID scheduleId,
+            @PathVariable String scheduleId,
             @Valid @RequestBody ViewingScheduleRequest request,
             Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-        ViewingScheduleResponse response = viewingScheduleService.updateSchedule(scheduleId, request, user);
+        
+        UUID scheduleUUID;
+        try {
+            scheduleUUID = UUID.fromString(scheduleId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid schedule ID format: " + scheduleId);
+        }
+        
+        ViewingScheduleResponse response = viewingScheduleService.updateSchedule(scheduleUUID, request, user);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{scheduleId}")
     public ResponseEntity<String> deleteSchedule(
-            @PathVariable UUID scheduleId,
+            @PathVariable String scheduleId,
             Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-        viewingScheduleService.deleteSchedule(scheduleId, user);
+        
+        UUID scheduleUUID;
+        try {
+            scheduleUUID = UUID.fromString(scheduleId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid schedule ID format: " + scheduleId);
+        }
+        
+        viewingScheduleService.deleteSchedule(scheduleUUID, user);
         return ResponseEntity.ok("Xóa lịch xem phim thành công");
     }
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/check/{movieId}")
     public ResponseEntity<Boolean> isMovieScheduled(
-            @PathVariable UUID movieId,
+            @PathVariable String movieId,
             Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-        boolean isScheduled = viewingScheduleService.isMovieScheduledByUser(user, movieId);
+        
+        UUID movieUUID;
+        try {
+            movieUUID = UUID.fromString(movieId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid movie ID format: " + movieId);
+        }
+        
+        boolean isScheduled = viewingScheduleService.isMovieScheduledByUser(user, movieUUID);
         return ResponseEntity.ok(isScheduled);
     }
     
@@ -87,14 +111,23 @@ public class ViewingScheduleController {
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/watch-later")
     public ResponseEntity<ViewingScheduleResponse> addToWatchLater(
-            @RequestBody Map<String, UUID> request, 
+            @RequestBody Map<String, String> request, 
             Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-        UUID movieId = request.get("movieId");
-        if (movieId == null) {
+        
+        String movieIdStr = request.get("movieId");
+        if (movieIdStr == null || movieIdStr.trim().isEmpty()) {
             throw new IllegalArgumentException("Movie ID is required");
         }
+        
+        UUID movieId;
+        try {
+            movieId = UUID.fromString(movieIdStr);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid movie ID format: " + movieIdStr);
+        }
+        
         ViewingScheduleResponse response = viewingScheduleService.addToWatchLater(movieId, user);
         return ResponseEntity.ok(response);
     }
@@ -111,11 +144,19 @@ public class ViewingScheduleController {
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/watch-later/{movieId}")
     public ResponseEntity<String> removeFromWatchLater(
-            @PathVariable UUID movieId, 
+            @PathVariable String movieId, 
             Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-        viewingScheduleService.removeFromWatchLater(movieId, user);
+        
+        UUID movieUUID;
+        try {
+            movieUUID = UUID.fromString(movieId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid movie ID format: " + movieId);
+        }
+        
+        viewingScheduleService.removeFromWatchLater(movieUUID, user);
         return ResponseEntity.ok("Đã xóa khỏi danh sách xem sau");
     }
 }
