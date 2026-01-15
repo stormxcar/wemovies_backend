@@ -192,7 +192,7 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
         ViewingSchedule watchLaterSchedule = ViewingSchedule.builder()
                 .user(user)
                 .movie(movie)
-                .scheduledDateTime(null) // No specific time for watch later
+                .scheduledDateTime(LocalDateTime.now().plusYears(100)) // Far future date for watch later
                 .reminderEnabled(false)
                 .notes("Thêm vào danh sách xem sau")
                 .status(ScheduleStatus.WATCH_LATER)

@@ -20,6 +20,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -78,7 +83,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated() // Remove cookie consent for profile operations
                         .requestMatchers("/api/auth/verifyUser").access(cookieConsentAuthorizationManager) // Keep for verifyUser (GDPR compliance)
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(googleOAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -90,12 +96,21 @@ public class SecurityConfig {
                 "https://wemovies-frontend.vercel.app",
                 "http://localhost:3000",
                 "https://localhost:3000",
-                "https://wemovies-backend.onrender.com"
+                "https://wemovies-backend.onrender.com",
+                "https://accounts.google.com",  // Google OAuth
+                "https://oauth2.googleapis.com" // Google OAuth token endpoint
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
+        
+        // Thêm exposed headers cho Google OAuth
+        config.setExposedHeaders(List.of(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials",
+            "Set-Cookie"
+        ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -110,5 +125,24 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+    
+    @Bean
+    public OncePerRequestFilter googleOAuthFilter() {
+        return new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) 
+                    throws ServletException, java.io.IOException {
+                
+                // Add headers to support Google OAuth popup
+                response.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+                response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+                
+                // Allow third-party cookies for Google OAuth
+                response.setHeader("Access-Control-Allow-Private-Network", "true");
+                
+                filterChain.doFilter(request, response);
+            }
+        };
     }
 }

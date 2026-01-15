@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
-
 import jakarta.mail.internet.MimeMessage;
 
 @Service
@@ -21,19 +20,26 @@ public class AsyncEmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    // @Value("${app.email.allowed-domains}")
-    // private String allowedDomains;
+    @Value("${spring.profiles.active:default}")
+    private String activeProfile;
 
     @Async
     public void sendEmailAsync(String to, String subject, String content) throws MailException {
         System.out.println("=== STARTING ASYNC EMAIL SEND ===");
+        System.out.println("Profile: " + activeProfile);
         System.out.println("To: " + to);
         System.out.println("Subject: " + subject);
         System.out.println("From: " + fromEmail);
         System.out.println("Content length: " + content.length());
 
-        // Validate email domain trong development mode
-        // validateEmailDomain(to); // Tạm thời disable khi dùng Gmail
+        // Check if running on cloud platform
+        boolean isCloudEnvironment = isCloudEnvironment();
+
+        if (isCloudEnvironment) {
+            System.out.println("⚠️  Detected cloud environment. Gmail SMTP may be blocked.");
+            System.out.println("💡 Make sure you're using Gmail App Passwords, not regular password!");
+            System.out.println("📖 Setup instructions: https://support.google.com/accounts/answer/185833");
+        }
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -44,12 +50,21 @@ public class AsyncEmailService {
             helper.setSubject(subject);
             helper.setText(content, true); // true = html content
 
-            System.out.println("About to send email via mailSender...");
+            System.out.println("About to send email via Gmail SMTP...");
             mailSender.send(message);
             System.out.println("✅ Email sent successfully to: " + to);
+
         } catch (MessagingException e) {
             System.err.println("❌ MessagingException - Email sending failed to: " + to);
             System.err.println("Error: " + e.getMessage());
+
+            if (isCloudEnvironment && e.getMessage().contains("timeout")) {
+                System.err.println("💡 Connection issue detected. Gmail may be blocking cloud connections.");
+                System.err.println("💡 Try using a different Gmail account or contact Google support.");
+                System.err.println("🔧 Make sure MAIL_PASSWORD is set to Gmail App Password (not regular password)");
+                System.err.println("📧 Test with a different email provider if issues persist");
+            }
+
             if (e.getCause() != null) {
                 System.err.println("Cause: " + e.getCause().getMessage());
                 // Check for common issues
@@ -136,4 +151,16 @@ public class AsyncEmailService {
         throw new IllegalArgumentException("Email domain '" + domain + "' is not allowed in development mode. Allowed domains: " + allowedDomains);
     }
     */
+
+    /**
+     * Detect if running on cloud platform (Render, Heroku, etc.)
+     */
+    private boolean isCloudEnvironment() {
+        // Check for common cloud environment variables
+        return System.getenv("RENDER") != null ||
+               System.getenv("DYNO") != null || // Heroku
+               System.getenv("RAILWAY_ENVIRONMENT") != null ||
+               System.getenv("VERCEL") != null ||
+               System.getenv("PORT") != null && !System.getenv("PORT").equals("8080"); // Non-default port
+    }
 }

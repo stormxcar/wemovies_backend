@@ -28,8 +28,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void addOrUpdateReview(String email, String movieId, Integer rating, String comment) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("User email is required");
+        }
+        
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         
         UUID movieUUID;
         try {
@@ -39,7 +43,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
         
         Movie movie = movieRepository.findById(movieUUID)
-                .orElseThrow(() -> new RuntimeException("Movie not found"));
+                .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + movieId));
 
         if (rating < 1 || rating > 5) {
             throw new RuntimeException("Rating must be between 1 and 5");
@@ -63,8 +67,12 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void deleteReview(String email, String movieId) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("User email is required");
+        }
+        
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         
         UUID movieUUID;
         try {
@@ -74,10 +82,10 @@ public class ReviewServiceImpl implements ReviewService {
         }
         
         Movie movie = movieRepository.findById(movieUUID)
-                .orElseThrow(() -> new RuntimeException("Movie not found"));
+                .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + movieId));
 
         Review review = reviewRepository.findByUserAndMovie(user, movie)
-                .orElseThrow(() -> new RuntimeException("Review not found"));
+                .orElseThrow(() -> new RuntimeException("Review not found for this user and movie"));
         reviewRepository.delete(review);
     }
 

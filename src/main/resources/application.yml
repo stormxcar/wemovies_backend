@@ -79,3 +79,7 @@ cloudinary:
 
 google:
   client-id: ${GOOGLE_CLIENT_ID}
+
+email:
+  provider: gmail # Always use gmail
+  app-passwords-required: true

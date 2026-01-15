@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.models.Notification;
+import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.services.NotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +29,21 @@ public class NotificationController {
     @Autowired
     private ObjectMapper objectMapper;
     
+    @Autowired
+    private UserRepository userRepository;
+    
     /**
      * WebSocket message handler - Client subscribe to notifications
      */
     @MessageMapping("/notifications.subscribe")
     @SendTo("/topic/notifications")
-    public String subscribeToNotifications(@Payload String userId) {
-        return "User " + userId + " subscribed to notifications";
+    public Map<String, Object> subscribeToNotifications(@Payload String userId) {
+        return Map.of(
+            "type", "SUBSCRIPTION_CONFIRMED",
+            "message", "User " + userId + " subscribed to notifications",
+            "userId", userId,
+            "timestamp", System.currentTimeMillis()
+        );
     }
     
     /**
@@ -328,8 +337,12 @@ public class NotificationController {
     }
     
     private String getUserId(Authentication authentication) {
-        // Extract user ID from authentication
-        // This depends on your JWT/auth implementation
-        return authentication.getName(); // Assumes username = userId
+        // Extract email from authentication
+        String email = authentication.getName();
+        
+        // Find user by email and return UUID as string
+        return userRepository.findByEmail(email)
+            .map(user -> user.getId().toString())
+            .orElseThrow(() -> new RuntimeException("User not found for email: " + email));
     }
 }

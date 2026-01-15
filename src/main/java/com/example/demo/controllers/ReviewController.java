@@ -18,13 +18,21 @@ public class ReviewController {
     private ReviewService reviewService;
 
     @PostMapping("/{movieId}/review")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> addOrUpdateReview(@PathVariable String movieId,
                                                     @RequestParam Integer rating,
                                                     @RequestParam(required = false) String comment,
                                                     Principal principal) {
         try {
+            if (principal == null || principal.getName() == null) {
+                return ResponseEntity.status(401).body("Authentication required");
+            }
+            
             String email = principal.getName();
+            if (email.trim().isEmpty()) {
+                return ResponseEntity.status(401).body("Invalid authentication");
+            }
+            
             reviewService.addOrUpdateReview(email, movieId, rating, comment);
             return ResponseEntity.ok("Review added/updated successfully");
         } catch (Exception e) {
@@ -36,7 +44,15 @@ public class ReviewController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteReview(@PathVariable String movieId, Principal principal) {
         try {
+            if (principal == null || principal.getName() == null) {
+                return ResponseEntity.status(401).body("Authentication required");
+            }
+            
             String email = principal.getName();
+            if (email.trim().isEmpty()) {
+                return ResponseEntity.status(401).body("Invalid authentication");
+            }
+            
             reviewService.deleteReview(email, movieId);
             return ResponseEntity.ok("Review deleted successfully");
         } catch (Exception e) {
