@@ -396,4 +396,9 @@ public class AuthServiceImpl implements AuthService {
         }
         return user;
     }
+
+    @Override
+    public String getGoogleClientId() {
+        return googleClientId;
+    }
 }

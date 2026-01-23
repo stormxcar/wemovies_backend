@@ -23,6 +23,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.ResponseEntity;
@@ -88,6 +90,29 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/google/debug")
+    public ResponseEntity<?> debugGoogleConfig() {
+        Map<String, String> info = new HashMap<>();
+        try {
+            String clientId = authService.getGoogleClientId();
+            info.put("googleClientId", clientId != null ? clientId : "null");
+            info.put("isConfigured", clientId != null ? "true" : "false");
+            info.put("message", "Google OAuth debugging endpoint");
+            return ResponseEntity.ok(info);
+        } catch (Exception e) {
+            info.put("error", e.getMessage());
+            return ResponseEntity.ok(info);
+        }
+    }
+
+    @PostMapping("/google/test")
+    public ResponseEntity<?> testGoogleEndpoint(@RequestBody GoogleLoginRequest googleLoginRequest) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Test endpoint received token");
+        response.put("tokenLength", googleLoginRequest.getIdToken() != null ? googleLoginRequest.getIdToken().length() : 0);
+        response.put("googleClientId", authService.getGoogleClientId());
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {

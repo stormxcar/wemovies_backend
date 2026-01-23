@@ -31,6 +31,8 @@ public interface AuthService {
 
     AuthResponse googleLogin(String idToken) throws GeneralSecurityException, IOException;
 
+    String getGoogleClientId();
+
     public Object getUserByEmail(String email);
 
 }
