@@ -1,16 +1,19 @@
 package com.example.demo.services.Impls;
 
 import com.example.demo.models.Movie;
+import com.example.demo.models.Notification;
 import com.example.demo.models.Watchlist;
 import com.example.demo.models.auth.User;
 import com.example.demo.repositories.MovieRepository;
-import com.example.demo.repositories.WatchlistRepository;
 import com.example.demo.repositories.auth.UserRepository;
+import com.example.demo.repositories.WatchlistRepository;
+import com.example.demo.services.NotificationService;
 import com.example.demo.services.WatchlistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +28,9 @@ public class WatchlistServiceImpl implements WatchlistService {
 
     @Autowired
     private MovieRepository movieRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public void addToWatchlist(String email, String movieId) {
@@ -42,6 +48,21 @@ public class WatchlistServiceImpl implements WatchlistService {
         watchlist.setMovie(movie);
         watchlist.setAddedAt(LocalDateTime.now());
         watchlistRepository.save(watchlist);
+        
+        // Send watchlist notification
+        try {
+            notificationService.sendRealTimeNotification(
+                email,
+                Notification.NotificationType.WATCHLIST_REMINDER,
+                "📋 Đã thêm vào danh sách xem sau",
+                "Phim '" + movie.getTitle() + "' đã được thêm vào danh sách xem sau của bạn.",
+                "/watchlist", // actionUrl
+                movie, // relatedMovie
+                new HashMap<>() // metadata
+            );
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send watchlist notification: " + e.getMessage());
+        }
     }
 
     @Override

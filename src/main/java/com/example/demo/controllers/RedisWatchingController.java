@@ -1,6 +1,8 @@
 package com.example.demo.controllers;
 
 import com.example.demo.dto.request.WatchProgressRequest;
+import com.example.demo.models.Notification;
+import com.example.demo.services.NotificationService;
 // import com.example.demo.enums.WatchStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,6 +24,9 @@ public class RedisWatchingController {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // Keys patterns
     private static final String WATCHING_LIST = "watching_list:";
@@ -191,6 +196,24 @@ public class RedisWatchingController {
             if (total != null && total > 0) {
                 double percentage = (double) currentTime / total * 100;
                 watchingDetail.put("percentage", Math.round(percentage * 10) / 10.0);
+                
+                // Send milestone notifications
+                if (percentage >= 50 && percentage < 55) {
+                    try {
+                        String movieTitle = (String) watchingDetail.get("movieTitle");
+                        notificationService.sendRealTimeNotification(
+                            userId,
+                            Notification.NotificationType.WATCH_PROGRESS,
+                            "📺 Đã xem được nửa phim",
+                            "Bạn đã xem được 50% phim '" + movieTitle + "'. Tiếp tục thưởng thức nhé!",
+                            null, // actionUrl
+                            null, // relatedMovie  
+                            new HashMap<>() // metadata
+                        );
+                    } catch (Exception e) {
+                        System.err.println("❌ Failed to send milestone notification: " + e.getMessage());
+                    }
+                }
             }
 
             // Save back to Redis
@@ -441,6 +464,22 @@ public class RedisWatchingController {
                 
                 // Lưu lại với TTL dài hơn (60 ngày cho phim đã hoàn thành)
                 redisTemplate.opsForValue().set(detailKey, watchingDetail, 60, TimeUnit.DAYS);
+                
+                // Send completion notification
+                try {
+                    String movieTitle = (String) watchingDetail.get("movieTitle");
+                    notificationService.sendRealTimeNotification(
+                        userId,
+                        Notification.NotificationType.WATCH_PROGRESS,
+                        "🎉 Hoàn thành phim: " + movieTitle,
+                        "Bạn đã xem xong phim '" + movieTitle + "'. Tìm phim mới để thưởng thức nhé!",
+                        null, // actionUrl
+                        null, // relatedMovie
+                        new HashMap<>() // metadata
+                    );
+                } catch (Exception e) {
+                    System.err.println("❌ Failed to send completion notification: " + e.getMessage());
+                }
                 
                 // Xóa khỏi danh sách đang xem
                 String listKey = WATCHING_LIST + userId;

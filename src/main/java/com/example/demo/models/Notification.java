@@ -61,19 +61,23 @@ public class Notification extends BaseEntity {
     }
     
     public enum NotificationType {
-        // Movie related
-        NEW_EPISODE("📺", "Tập phim mới"),
-        NEW_MOVIE("🎬", "Phim mới"), 
-        MOVIE_REMINDER("⏰", "Nhắc nhở xem phim"),
-        
-        // User activity
-        FRIEND_ACTIVITY("👥", "Hoạt động bạn bè"),
-        RECOMMENDATION("🎯", "Gợi ý cho bạn"),
+        // Movie related - Enhanced with user requests
+        NEW_EPISODE("📺", "Tập mới của series đang follow"),
+        NEW_MOVIE("🎬", "Phim mới theo thể loại yêu thích"), 
+        MOVIE_REMINDER("⏰", "Nhắc nhở xem tiếp phim dở dang"),
         CONTINUE_WATCHING("▶️", "Tiếp tục xem"),
+        WEEKLY_DIGEST("📊", "Weekly digest: phim hot tuần này"),
+        WATCH_PROGRESS("📈", "Tiến trình xem phim"),
+        WATCHLIST_REMINDER("📝", "Nhắc nhở danh sách xem sau"),
         
-        // System
+        // User activity - Enhanced  
+        FRIEND_ACTIVITY("👥", "Bạn bè review phim mới"),
+        FRIEND_REVIEW("📝", "Bạn bè đánh giá phim mới"),
+        RECOMMENDATION("🎯", "Gợi ý cho bạn"),
+        
+        // System - Enhanced with maintenance
         SYSTEM("🔔", "Thông báo hệ thống"),
-        MAINTENANCE("🔧", "Bảo trì"),
+        MAINTENANCE("🔧", "Maintenance/downtime thông báo"),
         UPDATE("🆕", "Cập nhật"),
         
         // Social 

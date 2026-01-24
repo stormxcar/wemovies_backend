@@ -116,10 +116,13 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             user = new User();
             user.setEmail(email);
-            user.setUserName(email);
+            // Set username as part before @ symbol
+            user.setUserName(email.split("@")[0]);
             user.setFullName(name != null ? name : email.split("@")[0]);
             user.setAvatar(picture);
             user.setGoogleId(googleId);
+            // Set a default password for Google users (they don't need to login with password)
+            user.setPassWord(passwordEncoder.encode("GOOGLE_OAUTH_USER_NO_PASSWORD"));
             user.setRole(roleRepository.findByRoleName("USER").orElseThrow(() -> new RuntimeException("Role not found")));
             user = userRepository.save(user);
         } else if (user.getGoogleId() == null) {
