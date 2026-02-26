@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/countries/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/types/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
-                        .requestMatchers("/api/redis-watching/**").permitAll() // Allow Redis watching endpoints
+                        .requestMatchers("/api/hybrid-watching/**").permitAll() // Unified Hybrid API (Redis + Database)
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
                         .requestMatchers("/api/cookies/**").permitAll() // Allow cookie preference management
                         .requestMatchers("/api/types/**").permitAll() // Allow CRUD operations for types

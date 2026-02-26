@@ -145,4 +145,14 @@ public class MovieServiceImpl implements MovieService {
     public List<Movie> findMoviesByCountryAndCategory(String countryName, String categoryName) {
         return movieRepository.findMoviesByCountryAndCategory(countryName, categoryName);
     }
+    
+    @Override
+    public List<Movie> getMoviesByMovieType(String movieTypeName) {
+        return movieRepository.getMoviesByMovieType(movieTypeName);
+    }
+    
+    @Override
+    public List<Movie> getMoviesByMovieTypeId(UUID movieTypeId) {
+        return movieRepository.getMoviesByMovieTypeId(movieTypeId);
+    }
 }

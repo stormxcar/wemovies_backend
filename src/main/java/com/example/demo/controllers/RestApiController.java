@@ -118,4 +118,30 @@ public class RestApiController {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving hot movies", null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/movies/type/{movieTypeName}")
+    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByMovieType(@PathVariable String movieTypeName) {
+        try {
+            List<Movie> movies = movieService.getMoviesByMovieType(movieTypeName);
+            if (movies.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse<>(true, "No movies found for the movie type", null));
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movies retrieved successfully", movies));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving movies", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/movies/type/id/{movieTypeId}")
+    public ResponseEntity<ApiResponse<List<Movie>>> getMoviesByMovieTypeId(@PathVariable UUID movieTypeId) {
+        try {
+            List<Movie> movies = movieService.getMoviesByMovieTypeId(movieTypeId);
+            if (movies.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse<>(true, "No movies found for the movie type ID", null));
+            }
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movies retrieved successfully", movies));
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving movies", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

@@ -61,5 +61,14 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
             "JOIN country AS co ON co.id = m.country_id " +
             "WHERE co.name = :countryName AND c.name = :categoryName", nativeQuery = true)
     List<Movie> findMoviesByCountryAndCategory(@Param("countryName") String countryName, @Param("categoryName") String categoryName);
+    
+    @Query("SELECT m FROM Movie m JOIN m.movieTypes mt WHERE mt.name = :movieTypeName")
+    List<Movie> getMoviesByMovieType(@Param("movieTypeName") String movieTypeName);
+    
+    @Query(value = "SELECT m.* FROM movie AS m " +
+            "JOIN movie_movie_type AS mmt ON mmt.movie_id = m.id " +
+            "JOIN movie_type AS mt ON mt.id = mmt.movie_type_id " +
+            "WHERE mt.id = :movieTypeId", nativeQuery = true)
+    List<Movie> getMoviesByMovieTypeId(@Param("movieTypeId") UUID movieTypeId);
 
 }

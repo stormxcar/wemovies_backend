@@ -1,13 +1,11 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.request.WatchProgressRequest;
-import com.example.demo.models.Notification;
+import com.example.demo.services.HybridWatchingService;
 import com.example.demo.services.NotificationService;
-// import com.example.demo.enums.WatchStatus;
+import com.example.demo.models.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -15,26 +13,30 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redis-Only "Phim Đang Xem" Controller
- * Không cần database entities, chỉ dùng Redis
+ * Legacy Redis "Phim Đang Xem" Controller
+ * ⚠️ DEPRECATED: Use HybridRedisWatchingController instead
+ * Migrated to use HybridWatchingService for data persistence
  */
 @RestController
 @RequestMapping("/api/redis-watching")
 public class RedisWatchingController {
 
     @Autowired
+    private HybridWatchingService hybridWatchingService;
+    
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
     private NotificationService notificationService;
 
-    // Keys patterns
+    // Keys patterns (for legacy compatibility)
     private static final String WATCHING_LIST = "watching_list:";
     private static final String WATCHING_DETAIL = "watching_detail:";
     private static final String LIVE_SESSION = "live_session:";
 
     /**
-     * Bắt đầu xem phim
+     * Bắt đầu xem phim (sử dụng Hybrid Storage)
      * POST /api/redis-watching/start
      */
     @PostMapping("/start")
@@ -42,18 +44,12 @@ public class RedisWatchingController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // Extract parameters with logging
+            // Extract parameters
             String userId = (String) request.get("userId");
             String movieId = (String) request.get("movieId");
             String movieTitle = (String) request.get("movieTitle");
             Integer totalDuration = request.get("totalDuration") != null ?
                 ((Number) request.get("totalDuration")).intValue() : 7200;
-
-            System.out.println("🎬 START WATCHING REQUEST:");
-            System.out.println("   - userId: " + userId);
-            System.out.println("   - movieId: " + movieId);
-            System.out.println("   - movieTitle: " + movieTitle);
-            System.out.println("   - totalDuration: " + totalDuration);
 
             // Validate required parameters
             if (userId == null || userId.trim().isEmpty()) {
@@ -74,76 +70,24 @@ public class RedisWatchingController {
                 return ResponseEntity.badRequest().body(result);
             }
 
-            // Create Redis keys
-            String listKey = WATCHING_LIST + userId;
-            String detailKey = WATCHING_DETAIL + userId + ":" + movieId;
-            String liveKey = LIVE_SESSION + userId + ":" + movieId;
+            // ⚠️ DEPRECATED: Use /api/hybrid-watching/start instead
+            // Using hybrid service for backward compatibility
+            Map<String, Object> watchingDetail = hybridWatchingService.startWatching(
+                Integer.parseInt(userId), 
+                Integer.parseInt(movieId), 
+                movieTitle, 
+                totalDuration
+            );
 
-            System.out.println("📝 Redis keys:");
-            System.out.println("   - listKey: " + listKey);
-            System.out.println("   - detailKey: " + detailKey);
-            System.out.println("   - liveKey: " + liveKey);
-
-            // Create watching detail with safe serialization (NO LocalDateTime objects)
-            String currentTimeStr = LocalDateTime.now().toString();
-            Map<String, Object> watchingDetail = new HashMap<>();
-            watchingDetail.put("movieId", movieId);
-            watchingDetail.put("movieTitle", movieTitle);
-            watchingDetail.put("currentTime", 0);
-            watchingDetail.put("totalDuration", totalDuration);
-            watchingDetail.put("percentage", 0.0);
-            watchingDetail.put("startedAt", currentTimeStr);
-            watchingDetail.put("lastWatched", currentTimeStr);
-
-            // Create live session with safe serialization (NO LocalDateTime objects)
-            Map<String, Object> liveSession = new HashMap<>();
-            liveSession.put("userId", userId);
-            liveSession.put("movieId", movieId);
-            liveSession.put("isActive", true);
-            liveSession.put("lastHeartbeat", currentTimeStr);
-
-            System.out.println("💾 Saving to Redis...");
-
-            // Save to Redis with error handling
-            try {
-                // Add to watching list (TTL 7 days)
-                redisTemplate.opsForSet().add(listKey, movieId);
-                redisTemplate.expire(listKey, 7, TimeUnit.DAYS);
-                System.out.println("   ✅ List saved");
-
-                // Save details (TTL 30 days)
-                redisTemplate.opsForValue().set(detailKey, watchingDetail, 30, TimeUnit.DAYS);
-                System.out.println("   ✅ Detail saved");
-
-                // Save live session (TTL 5 minutes)
-                redisTemplate.opsForValue().set(liveKey, liveSession, 5, TimeUnit.MINUTES);
-                System.out.println("   ✅ Live session saved");
-
-            } catch (Exception redisException) {
-                System.err.println("❌ Redis save error: " + redisException.getMessage());
-                redisException.printStackTrace();
-                throw redisException;
-            }
-
-            // Build successful response
             result.put("status", "SUCCESS");
             result.put("message", "✅ Bắt đầu xem phim thành công!");
             result.put("watchingDetail", watchingDetail);
-            result.put("timestamp", currentTimeStr);
+            result.put("timestamp", LocalDateTime.now().toString());
             result.put("success", true);
 
-            System.out.println("🎉 Watch session created successfully!");
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            System.err.println("❌ ERROR in startWatching:");
-            System.err.println("   - Message: " + e.getMessage());
-            System.err.println("   - Type: " + e.getClass().getSimpleName());
-            if (e.getCause() != null) {
-                System.err.println("   - Root cause: " + e.getCause().getMessage());
-            }
-            e.printStackTrace();
-            
             result.put("status", "ERROR");
             result.put("message", "❌ Lỗi khi bắt đầu xem phim: " + e.getMessage());
             result.put("error", e.getMessage());
@@ -236,46 +180,24 @@ public class RedisWatchingController {
     }
 
     /**
-     * Lấy danh sách phim đang xem
-     * GET /api/redis-watching/current/{userId}
+     * Lấy danh sách phim đang xem (migrated to hybrid storage)
+     * ⚠️ DEPRECATED: Use /api/hybrid-watching/watching-list/{userId} instead
      */
     @GetMapping("/current/{userId}")
+    @Deprecated
     public ResponseEntity<Map<String, Object>> getCurrentWatching(@PathVariable String userId) {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            String listKey = WATCHING_LIST + userId;
-            Set<Object> movieIds = redisTemplate.opsForSet().members(listKey);
-
-            List<Map<String, Object>> watchingMovies = new ArrayList<>();
-
-            if (movieIds != null) {
-                for (Object movieId : movieIds) {
-                    String detailKey = WATCHING_DETAIL + userId + ":" + movieId;
-                    Map<String, Object> detail = (Map<String, Object>) redisTemplate.opsForValue().get(detailKey);
-
-                    if (detail != null) {
-                        String liveKey = LIVE_SESSION + userId + ":" + movieId;
-                        boolean isLiveWatching = redisTemplate.hasKey(liveKey);
-                        detail.put("isCurrentlyWatching", isLiveWatching);
-
-                        watchingMovies.add(detail);
-                    }
-                }
-            }
-
-            // Sort by lastWatched (newest first)
-            watchingMovies.sort((a, b) -> {
-                String timeA = (String) a.get("lastWatched");
-                String timeB = (String) b.get("lastWatched");
-                return timeB.compareTo(timeA);
-            });
-
+            // Use hybrid service for consistent data access
+            List<Map<String, Object>> watchingList = hybridWatchingService.getWatchingList(Integer.valueOf(userId));
+            
             result.put("status", "SUCCESS");
             result.put("message", "✅ Lấy danh sách phim đang xem thành công!");
-            result.put("totalMovies", watchingMovies.size());
-            result.put("watchingMovies", watchingMovies);
+            result.put("totalMovies", watchingList.size());
+            result.put("watchingMovies", watchingList);
             result.put("timestamp", LocalDateTime.now().toString());
+            result.put("deprecationNote", "⚠️ This endpoint will be deprecated. Use /api/hybrid-watching/watching-list/{userId} instead");
 
             return ResponseEntity.ok(result);
 
@@ -288,10 +210,11 @@ public class RedisWatchingController {
     }
 
     /**
-     * Lấy thời gian xem hiện tại để tiếp tục phim
-     * GET /api/redis-watching/resume/{userId}/{movieId}
+     * Lấy thời gian xem hiện tại để tiếp tục phim (migrated to hybrid storage)
+     * ⚠️ DEPRECATED: Use /api/hybrid-watching/resume/{userId}/{movieId} instead
      */
     @GetMapping("/resume/{userId}/{movieId}")
+    @Deprecated
     public ResponseEntity<Map<String, Object>> getResumeTime(
             @PathVariable String userId, 
             @PathVariable String movieId) {
@@ -299,27 +222,21 @@ public class RedisWatchingController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            String detailKey = WATCHING_DETAIL + userId + ":" + movieId;
-            Map<String, Object> watchingDetail = (Map<String, Object>) redisTemplate.opsForValue().get(detailKey);
+            // Use hybrid service for consistent data access
+            Map<String, Object> watchingProgress = hybridWatchingService.getWatchingProgress(
+                Integer.valueOf(userId), Integer.valueOf(movieId));
 
-            if (watchingDetail == null) {
+            if (watchingProgress == null) {
                 result.put("status", "ERROR");
                 result.put("message", "❌ Không tìm thấy lịch sử xem phim!");
                 return ResponseEntity.status(404).body(result);
             }
 
-            Integer currentTime = (Integer) watchingDetail.get("currentTime");
-            Integer totalDuration = (Integer) watchingDetail.get("totalDuration");
-            Double percentage = (Double) watchingDetail.get("percentage");
-
             result.put("status", "SUCCESS");
             result.put("message", "✅ Tìm thấy vị trí tiếp tục xem!");
-            result.put("resumeTime", currentTime != null ? currentTime : 0);
-            result.put("totalDuration", totalDuration);
-            result.put("percentage", percentage != null ? percentage : 0.0);
-            result.put("lastWatched", watchingDetail.get("lastWatched"));
-            result.put("movieTitle", watchingDetail.get("movieTitle"));
+            result.putAll(watchingProgress);
             result.put("timestamp", LocalDateTime.now().toString());
+            result.put("deprecationNote", "⚠️ This endpoint will be deprecated. Use /api/hybrid-watching/resume/{userId}/{movieId} instead");
 
             return ResponseEntity.ok(result);
 

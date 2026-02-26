@@ -26,5 +26,8 @@ public interface MovieService {
     List<Movie> getMoviesByCountryId(UUID countryId);
 
     List<Movie> findMoviesByCountryAndCategory(String countryName, String categoryName);
+    
+    List<Movie> getMoviesByMovieType(String movieTypeName);
+    List<Movie> getMoviesByMovieTypeId(UUID movieTypeId);
 
 }
