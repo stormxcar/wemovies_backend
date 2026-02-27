@@ -27,6 +27,12 @@ public class HybridWatchingService {
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private ViewTrackingService viewTrackingService;
+    
+    @Autowired
+    private TrendingService trendingService;
 
     // Keys patterns
     private static final String WATCHING_LIST = "watching_list:";
@@ -42,8 +48,18 @@ public class HybridWatchingService {
         return updateWatchingTime(userId.toString(), movieId.toString(), currentTime, totalDuration);
     }
 
+    // String overload for controller compatibility
+    public Map<String, Object> updateProgress(String userId, String movieId, Integer currentTime, Integer totalDuration) {
+        return updateWatchingTime(userId, movieId, currentTime, totalDuration);
+    }
+
     public Map<String, Object> getWatchingProgress(Integer userId, Integer movieId) {
         return getResumeTime(userId.toString(), movieId.toString());
+    }
+
+    // String overload for controller compatibility
+    public Map<String, Object> getWatchingProgress(String userId, String movieId) {
+        return getResumeTime(userId, movieId);
     }
 
     public List<Map<String, Object>> getWatchingList(Integer userId) {
@@ -53,8 +69,22 @@ public class HybridWatchingService {
         return watchingMovies != null ? watchingMovies : new ArrayList<>();
     }
 
+    // String overload for controller compatibility
+    public List<Map<String, Object>> getWatchingList(String userId) {
+        Map<String, Object> currentData = getCurrentWatching(userId);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> watchingMovies = (List<Map<String, Object>>) currentData.get("watchingMovies");
+        return watchingMovies != null ? watchingMovies : new ArrayList<>();
+    }
+
     public boolean markCompleted(Integer userId, Integer movieId) {
         Map<String, Object> result = completeWatching(userId.toString(), movieId.toString());
+        return "SUCCESS".equals(result.get("status"));
+    }
+
+    // String overload for controller compatibility  
+    public boolean markCompleted(String userId, String movieId) {
+        Map<String, Object> result = completeWatching(userId, movieId);
         return "SUCCESS".equals(result.get("status"));
     }
 
@@ -73,6 +103,37 @@ public class HybridWatchingService {
             // Send notification
             notificationService.sendRealTimeNotification(
                 userId.toString(),
+                Notification.NotificationType.WATCH_PROGRESS,
+                "Phim đã được xóa",
+                "Đã xóa phim khỏi danh sách đang xem",
+                null, // actionUrl
+                null, // relatedMovie
+                new HashMap<>() // metadata
+            );
+            
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Error removing watching progress: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // String overload for controller compatibility
+    public boolean removeWatching(String userId, String movieId) {
+        try {
+            // Remove from Redis
+            String redisKey = "watching_detail:" + userId + ":" + movieId;
+            redisTemplate.delete(redisKey);
+            
+            String listKey = "watching_list:" + userId;
+            redisTemplate.opsForSet().remove(listKey, movieId);
+            
+            // Remove from Database
+            progressRepository.deleteByUserIdAndMovieId(userId, movieId);
+            
+            // Send notification
+            notificationService.sendRealTimeNotification(
+                userId,
                 Notification.NotificationType.WATCH_PROGRESS,
                 "Phim đã được xóa",
                 "Đã xóa phim khỏi danh sách đang xem",
@@ -167,7 +228,7 @@ public class HybridWatchingService {
         
         try {
             // 1. Lấy từ Redis hoặc Database
-            WatchingProgress progress = getWatchingProgress(userId, movieId);
+            WatchingProgress progress = findWatchingProgress(userId, movieId);
             
             if (progress == null) {
                 result.put("status", "ERROR");
@@ -189,7 +250,14 @@ public class HybridWatchingService {
             progressRepository.save(progress);
             saveToRedis(progress);
             
-            // 4. Send milestone notifications
+            // 4. Track view progress for analytics and auto-increment views
+            viewTrackingService.trackView(userId, movieId, currentTime.longValue(), 
+                progress.getTotalDuration() != null ? progress.getTotalDuration().longValue() : totalDuration.longValue());
+            
+            // 5. Track hourly view for trending calculation
+            trendingService.trackHourlyView(movieId);
+            
+            // 6. Send milestone notifications
             sendMilestoneNotification(userId, progress);
             
             result.put("status", "SUCCESS");
@@ -246,7 +314,7 @@ public class HybridWatchingService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            WatchingProgress progress = getWatchingProgress(userId, movieId);
+            WatchingProgress progress = findWatchingProgress(userId, movieId);
             
             if (progress == null) {
                 result.put("status", "ERROR");
@@ -318,7 +386,7 @@ public class HybridWatchingService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            WatchingProgress progress = getWatchingProgress(userId, movieId);
+            WatchingProgress progress = findWatchingProgress(userId, movieId);
             
             if (progress != null) {
                 progress.markCompleted();
@@ -386,7 +454,7 @@ public class HybridWatchingService {
     /**
      * Lấy WatchingProgress từ Redis hoặc Database
      */
-    private WatchingProgress getWatchingProgress(String userId, String movieId) {
+    private WatchingProgress findWatchingProgress(String userId, String movieId) {
         // 1. Thử Redis trước
         String detailKey = WATCHING_DETAIL + userId + ":" + movieId;
         Map<Object, Object> redisData = redisTemplate.opsForHash().entries(detailKey);

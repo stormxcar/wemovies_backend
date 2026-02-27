@@ -66,6 +66,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/types/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
                         .requestMatchers("/api/hybrid-watching/**").permitAll() // Unified Hybrid API (Redis + Database)
+                        .requestMatchers("/api/view-tracking/**").permitAll() // View tracking and real-time view count
+                        .requestMatchers("/api/trending/**").permitAll() // Trending movies and hot content
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
                         .requestMatchers("/api/cookies/**").permitAll() // Allow cookie preference management
                         .requestMatchers("/api/types/**").permitAll() // Allow CRUD operations for types

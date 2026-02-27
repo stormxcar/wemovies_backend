@@ -56,8 +56,8 @@ public class HybridRedisWatchingController {
 
             // Use hybrid service to start watching
             Map<String, Object> watchingDetail = hybridWatchingService.startWatching(
-                Integer.valueOf(userId), 
-                Integer.valueOf(movieId), 
+                userId, 
+                movieId, 
                 movieTitle, 
                 totalDuration
             );
@@ -103,8 +103,8 @@ public class HybridRedisWatchingController {
 
             // Use hybrid service to update progress
             Map<String, Object> updateResult = hybridWatchingService.updateProgress(
-                Integer.valueOf(userId), 
-                Integer.valueOf(movieId), 
+                userId, 
+                movieId, 
                 currentTime, 
                 totalDuration
             );
@@ -136,7 +136,7 @@ public class HybridRedisWatchingController {
      * GET /api/hybrid-watching/watching-list/{userId}
      */
     @GetMapping("/watching-list/{userId}")
-    public ResponseEntity<List<Map<String, Object>>> getWatchingList(@PathVariable Integer userId) {
+    public ResponseEntity<List<Map<String, Object>>> getWatchingList(@PathVariable String userId) {
         try {
             List<Map<String, Object>> watchingList = hybridWatchingService.getWatchingList(userId);
             return ResponseEntity.ok(watchingList);
@@ -151,8 +151,8 @@ public class HybridRedisWatchingController {
      */
     @GetMapping("/resume/{userId}/{movieId}")
     public ResponseEntity<Map<String, Object>> getResumeTime(
-            @PathVariable Integer userId, 
-            @PathVariable Integer movieId) {
+            @PathVariable String userId, 
+            @PathVariable String movieId) {
         
         Map<String, Object> result = new HashMap<>();
 
@@ -203,8 +203,8 @@ public class HybridRedisWatchingController {
             }
 
             boolean success = hybridWatchingService.markCompleted(
-                Integer.valueOf(userId), 
-                Integer.valueOf(movieId)
+                userId, 
+                movieId
             );
 
             if (success) {
@@ -232,8 +232,8 @@ public class HybridRedisWatchingController {
      */
     @DeleteMapping("/remove")
     public ResponseEntity<Map<String, Object>> removeWatching(
-            @RequestParam Integer userId,
-            @RequestParam Integer movieId) {
+            @RequestParam String userId,
+            @RequestParam String movieId) {
 
         Map<String, Object> result = new HashMap<>();
 
@@ -264,7 +264,7 @@ public class HybridRedisWatchingController {
      * GET /api/hybrid-watching/stats/{userId}
      */
     @GetMapping("/stats/{userId}")
-    public ResponseEntity<Map<String, Object>> getWatchingStats(@PathVariable Integer userId) {
+    public ResponseEntity<Map<String, Object>> getWatchingStats(@PathVariable String userId) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -306,7 +306,7 @@ public class HybridRedisWatchingController {
 
             // Use hybrid service for heartbeat
             Map<String, Object> result = hybridWatchingService.sendHeartbeat(
-                Integer.valueOf(userId), Integer.valueOf(movieId), currentTime);
+                userId, movieId, currentTime);
 
             return ResponseEntity.ok(result);
 
