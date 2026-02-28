@@ -118,7 +118,23 @@ public class HybridRedisWatchingController {
             result.put("status", "SUCCESS");
             result.put("message", "✅ Cập nhật thời gian xem thành công!");
             result.put("currentTime", currentTime);
-            result.put("percentage", updateResult.get("percentage"));
+            
+            // Debug: Log updateResult structure
+            System.out.println("🔧 DEBUG updateResult: " + updateResult);
+            
+            // Fix: Get percentage from progress object, not directly from updateResult
+            Map<String, Object> progressData = (Map<String, Object>) updateResult.get("progress");
+            System.out.println("🔧 DEBUG progressData: " + progressData);
+            
+            if (progressData != null) {
+                Object percentageObj = progressData.get("percentage");
+                System.out.println("🔧 DEBUG percentageObj: " + percentageObj + " (type: " + (percentageObj != null ? percentageObj.getClass() : "null") + ")");
+                result.put("percentage", percentageObj);
+            } else {
+                System.out.println("🔧 DEBUG progressData is NULL!");
+                result.put("percentage", null);
+            }
+            
             result.put("timestamp", LocalDateTime.now().toString());
 
             return ResponseEntity.ok(result);

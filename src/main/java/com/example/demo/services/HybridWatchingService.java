@@ -207,6 +207,15 @@ public class HybridWatchingService {
             // 2. Lưu vào Redis (fast access)
             saveToRedis(progress);
             
+            // 3. Track movie start for analytics
+            try {
+                // Track initial view when movie starts
+                viewTrackingService.trackView(userId, movieId, 0L, totalDuration.longValue());
+                System.out.println("✅ DEBUG: Start tracking completed for movieId=" + movieId);
+            } catch (Exception e) {
+                System.err.println("❌ Start tracking failed: " + e.getMessage());
+            }
+            
             result.put("status", "SUCCESS");
             result.put("message", "✅ Bắt đầu xem phim thành công!");
             result.put("progress", mapToResponse(progress));
@@ -227,16 +236,22 @@ public class HybridWatchingService {
         Map<String, Object> result = new HashMap<>();
         
         try {
+            System.out.println("🔄 DEBUG updateWatchingTime START: userId=" + userId + ", movieId=" + movieId + ", currentTime=" + currentTime);
+            
             // 1. Lấy từ Redis hoặc Database
             WatchingProgress progress = findWatchingProgress(userId, movieId);
             
             if (progress == null) {
+                System.out.println("❌ DEBUG Progress is NULL - movie not started!");
                 result.put("status", "ERROR");
                 result.put("message", "❌ Phim chưa được bắt đầu xem!");
                 return result;
             }
             
+            System.out.println("✅ DEBUG Found progress: currentTime=" + progress.getCurrentTime() + ", percentage=" + progress.getPercentage());
+            
             // 2. Update progress
+            System.out.println("🔧 DEBUG before update: currentTime=" + progress.getCurrentTime() + ", percentage=" + progress.getPercentage());
             progress.setCurrentTime(currentTime);
             progress.setLastWatched(LocalDateTime.now());
             
@@ -244,18 +259,35 @@ public class HybridWatchingService {
                 progress.setTotalDuration(totalDuration);
             }
             
+            System.out.println("🔧 DEBUG before calculatePercentage: currentTime=" + progress.getCurrentTime() + ", totalDuration=" + progress.getTotalDuration());
             progress.calculatePercentage();
+            System.out.println("🔧 DEBUG after calculatePercentage: percentage=" + progress.getPercentage());
             
-            // 3. Save to both Redis and Database  
+            // 3. Save to both Redis and Database
+            System.out.println("💾 DEBUG Saving to database...");
             progressRepository.save(progress);
+            System.out.println("✅ DEBUG Database save completed. Current values: currentTime=" + progress.getCurrentTime() + ", percentage=" + progress.getPercentage());
+            
+            System.out.println("💾 DEBUG Saving to Redis...");
             saveToRedis(progress);
+            System.out.println("✅ DEBUG Redis save completed");
             
             // 4. Track view progress for analytics and auto-increment views
-            viewTrackingService.trackView(userId, movieId, currentTime.longValue(), 
-                progress.getTotalDuration() != null ? progress.getTotalDuration().longValue() : totalDuration.longValue());
+            try {
+                viewTrackingService.trackView(userId, movieId, currentTime.longValue(), 
+                    progress.getTotalDuration() != null ? progress.getTotalDuration().longValue() : totalDuration.longValue());
+                System.out.println("✅ DEBUG: ViewTracking completed for movieId=" + movieId + ", currentTime=" + currentTime);
+            } catch (Exception e) {
+                System.err.println("❌ ViewTracking failed: " + e.getMessage());
+            }
             
             // 5. Track hourly view for trending calculation
-            trendingService.trackHourlyView(movieId);
+            try {
+                trendingService.trackHourlyView(movieId);
+                System.out.println("✅ DEBUG: TrendingTracking completed for movieId=" + movieId);
+            } catch (Exception e) {
+                System.err.println("❌ TrendingTracking failed: " + e.getMessage());
+            }
             
             // 6. Send milestone notifications
             sendMilestoneNotification(userId, progress);
@@ -267,6 +299,8 @@ public class HybridWatchingService {
             return result;
             
         } catch (Exception e) {
+            System.err.println("❌ ERROR in updateWatchingTime: " + e.getMessage());
+            e.printStackTrace();
             result.put("status", "ERROR");
             result.put("message", "❌ Lỗi khi cập nhật thời gian xem!");
             return result;
@@ -404,6 +438,20 @@ public class HybridWatchingService {
                 
                 // Send completion notification
                 sendCompletionNotification(userId, progress);
+                
+                // Track completion for analytics and trending
+                try {
+                    // Track final view when movie completed
+                    viewTrackingService.trackView(userId, movieId, progress.getCurrentTime().longValue(), 
+                        progress.getTotalDuration().longValue());
+                    
+                    // Update trending score for completed movie
+                    trendingService.updateTrendingScore(movieId);
+                    
+                    System.out.println("✅ DEBUG: Completion tracking completed for movieId=" + movieId);
+                } catch (Exception e) {
+                    System.err.println("❌ Completion tracking failed: " + e.getMessage());
+                }
             }
             
             result.put("status", "SUCCESS");
@@ -455,22 +503,30 @@ public class HybridWatchingService {
      * Lấy WatchingProgress từ Redis hoặc Database
      */
     private WatchingProgress findWatchingProgress(String userId, String movieId) {
+        System.out.println("🔍 DEBUG findWatchingProgress: userId=" + userId + ", movieId=" + movieId);
+        
         // 1. Thử Redis trước
         String detailKey = WATCHING_DETAIL + userId + ":" + movieId;
+        System.out.println("🔍 DEBUG Redis key: " + detailKey);
         Map<Object, Object> redisData = redisTemplate.opsForHash().entries(detailKey);
+        System.out.println("🔍 DEBUG Redis data size: " + redisData.size());
         
         if (!redisData.isEmpty()) {
+            System.out.println("✅ DEBUG Found in Redis: " + redisData);
             return mapFromRedis(redisData, userId, movieId);
         }
         
         // 2. Fallback sang Database
+        System.out.println("🔍 DEBUG Checking database...");
         Optional<WatchingProgress> dbProgress = progressRepository.findByUserIdAndMovieId(userId, movieId);
         if (dbProgress.isPresent()) {
+            System.out.println("✅ DEBUG Found in Database: currentTime=" + dbProgress.get().getCurrentTime());
             // Restore lại Redis
             saveToRedis(dbProgress.get());
             return dbProgress.get();
         }
         
+        System.out.println("❌ DEBUG Not found in both Redis and Database!");
         return null;
     }
 
@@ -478,28 +534,40 @@ public class HybridWatchingService {
      * Lưu WatchingProgress vào Redis
      */
     private void saveToRedis(WatchingProgress progress) {
-        String listKey = WATCHING_LIST + progress.getUserId();
-        String detailKey = WATCHING_DETAIL + progress.getUserId() + ":" + progress.getMovieId();
-        
-        // Add to watching list
-        if (!progress.getIsCompleted()) {
-            redisTemplate.opsForSet().add(listKey, progress.getMovieId());
-            redisTemplate.expire(listKey, 7, TimeUnit.DAYS);
-        }
-        
-        // Save details
+        try {
+            System.out.println("🔧 DEBUG saveToRedis: currentTime=" + progress.getCurrentTime() + ", percentage=" + progress.getPercentage());
+            
+            String listKey = WATCHING_LIST + progress.getUserId();
+            String detailKey = WATCHING_DETAIL + progress.getUserId() + ":" + progress.getMovieId();
+            
+            // Add to watching list
+            if (!progress.getIsCompleted()) {
+                redisTemplate.opsForSet().add(listKey, progress.getMovieId());
+                redisTemplate.expire(listKey, 7, TimeUnit.DAYS);
+                System.out.println("✅ DEBUG Added to watching list: " + listKey);
+            }
+            
+// Save details (including ID for proper updates)
         Map<String, Object> detailData = new HashMap<>();
-        detailData.put("movieId", progress.getMovieId());
-        detailData.put("movieTitle", progress.getMovieTitle());
-        detailData.put("currentTime", progress.getCurrentTime());
-        detailData.put("totalDuration", progress.getTotalDuration());
-        detailData.put("percentage", progress.getPercentage());
-        detailData.put("startedAt", progress.getStartedAt().toString());
-        detailData.put("lastWatched", progress.getLastWatched().toString());
-        detailData.put("isCompleted", progress.getIsCompleted());
-        
-        redisTemplate.opsForHash().putAll(detailKey, detailData);
-        redisTemplate.expire(detailKey, progress.getIsCompleted() ? 60 : 30, TimeUnit.DAYS);
+        detailData.put("id", progress.getId() != null ? progress.getId().toString() : null);
+            detailData.put("movieId", progress.getMovieId());
+            detailData.put("movieTitle", progress.getMovieTitle());
+            detailData.put("currentTime", progress.getCurrentTime());
+            detailData.put("totalDuration", progress.getTotalDuration());
+            detailData.put("percentage", progress.getPercentage());
+            detailData.put("startedAt", progress.getStartedAt().toString());
+            detailData.put("lastWatched", progress.getLastWatched().toString());
+            detailData.put("isCompleted", progress.getIsCompleted());
+            
+            System.out.println("🔧 DEBUG Redis detail data: " + detailData);
+            redisTemplate.opsForHash().putAll(detailKey, detailData);
+            redisTemplate.expire(detailKey, progress.getIsCompleted() ? 60 : 30, TimeUnit.DAYS);
+            System.out.println("✅ DEBUG Redis detail saved to: " + detailKey);
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR in saveToRedis: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -577,13 +645,63 @@ public class HybridWatchingService {
      */
     private WatchingProgress mapFromRedis(Map<Object, Object> redisData, String userId, String movieId) {
         WatchingProgress progress = new WatchingProgress();
+        
+        // Set ID if available (critical for updates vs inserts)
+        Object idObj = redisData.get("id");
+        if (idObj != null && !idObj.toString().equals("null")) {
+            try {
+                progress.setId(UUID.fromString(idObj.toString()));
+            } catch (Exception e) {
+                System.err.println("❌ Invalid UUID in Redis: " + idObj);
+            }
+        }
+        
         progress.setUserId(userId);
         progress.setMovieId(movieId);
         progress.setMovieTitle((String) redisData.get("movieTitle"));
-        progress.setCurrentTime((Integer) redisData.get("currentTime"));
-        progress.setTotalDuration((Integer) redisData.get("totalDuration"));
-        progress.setPercentage((Double) redisData.get("percentage"));
-        progress.setIsCompleted((Boolean) redisData.get("isCompleted"));
+        
+        // Safe type conversion for numbers
+        try {
+            Object currentTimeObj = redisData.get("currentTime");
+            if (currentTimeObj != null) {
+                if (currentTimeObj instanceof Number) {
+                    progress.setCurrentTime(((Number) currentTimeObj).intValue());
+                } else {
+                    progress.setCurrentTime(Integer.parseInt(currentTimeObj.toString()));
+                }
+            }
+            
+            Object totalDurationObj = redisData.get("totalDuration");
+            if (totalDurationObj != null) {
+                if (totalDurationObj instanceof Number) {
+                    progress.setTotalDuration(((Number) totalDurationObj).intValue());
+                } else {
+                    progress.setTotalDuration(Integer.parseInt(totalDurationObj.toString()));
+                }
+            }
+            
+            Object percentageObj = redisData.get("percentage");
+            if (percentageObj != null) {
+                if (percentageObj instanceof Number) {
+                    progress.setPercentage(((Number) percentageObj).doubleValue());
+                } else {
+                    progress.setPercentage(Double.parseDouble(percentageObj.toString()));
+                }
+            }
+            
+            Object isCompletedObj = redisData.get("isCompleted");
+            if (isCompletedObj != null) {
+                if (isCompletedObj instanceof Boolean) {
+                    progress.setIsCompleted((Boolean) isCompletedObj);
+                } else {
+                    progress.setIsCompleted(Boolean.parseBoolean(isCompletedObj.toString()));
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error converting Redis data types: " + e.getMessage());
+            e.printStackTrace();
+        }
         
         if (redisData.get("startedAt") != null) {
             progress.setStartedAt(LocalDateTime.parse((String) redisData.get("startedAt")));

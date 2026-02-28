@@ -70,8 +70,14 @@ public class WatchingProgress {
      * Calculate và update percentage
      */
     public void calculatePercentage() {
-        if (totalDuration != null && totalDuration > 0) {
-            this.percentage = Math.round((double) currentTime / totalDuration * 100 * 10) / 10.0;
+        System.out.println("🔧 DEBUG calculatePercentage: currentTime=" + currentTime + ", totalDuration=" + totalDuration);
+        if (totalDuration != null && totalDuration > 0 && currentTime != null) {
+            double calculatedPercentage = (double) currentTime / totalDuration * 100;
+            this.percentage = Math.round(calculatedPercentage * 10) / 10.0;
+            System.out.println("🔧 DEBUG: calculated percentage=" + this.percentage + " (from " + calculatedPercentage + ")");
+        } else {
+            this.percentage = 0.0;
+            System.out.println("🔧 DEBUG: percentage set to 0.0 due to null/invalid values");
         }
     }
     
