@@ -2,11 +2,13 @@ package com.example.demo.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.example.demo.models.Movie;
 import com.example.demo.repositories.MovieRepository;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +24,7 @@ public class TrendingService {
     
     private static final String TRENDING_SCORE = "trending_score:";
     private static final String HOURLY_VIEWS = "hourly_views:";
+    private static final DateTimeFormatter HOURLY_KEY_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHH");
     
     /**
      * Calculate trending score based on multiple factors
@@ -67,20 +70,57 @@ public class TrendingService {
      * Track hourly views for velocity calculation
      */
     public void trackHourlyView(String movieId) {
-        String hour = String.valueOf(LocalDateTime.now().getHour());
-        String key = HOURLY_VIEWS + movieId + ":" + hour;
+        String hourBucket = LocalDateTime.now().format(HOURLY_KEY_FORMAT);
+        String key = HOURLY_VIEWS + movieId + ":" + hourBucket;
         redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, 25, TimeUnit.HOURS); // Keep for 25h
+        redisTemplate.expire(key, 48, TimeUnit.HOURS);
+
+        // Keep score near real-time when view events arrive
+        updateTrendingScore(movieId);
+    }
+
+    /**
+     * Periodic refresh to keep ranking stable even without continuous traffic
+     */
+    @Scheduled(fixedRate = 300000) // 5 phút
+    public void refreshTrendingScores() {
+        List<Movie> movies = movieRepository.findAll();
+        for (Movie movie : movies) {
+            if (movie.getId() != null) {
+                updateTrendingScore(movie.getId().toString());
+            }
+        }
     }
     
     private Long getRecentViews(String movieId, int hours) {
-        // Implementation: Count views from Redis or History table
-        return 0L; // Placeholder
+        long total = 0L;
+        for (int i = 0; i < hours; i++) {
+            String bucket = LocalDateTime.now().minusHours(i).format(HOURLY_KEY_FORMAT);
+            String key = HOURLY_VIEWS + movieId + ":" + bucket;
+            Object value = redisTemplate.opsForValue().get(key);
+            total += safeLong(value);
+        }
+        return total;
     }
     
     private Double getViewVelocity(String movieId) {
-        // Calculate views per hour trend
-        return 0.0; // Placeholder
+        long last3h = getRecentViews(movieId, 3);
+        long prev3h = 0L;
+        for (int i = 3; i < 6; i++) {
+            String bucket = LocalDateTime.now().minusHours(i).format(HOURLY_KEY_FORMAT);
+            String key = HOURLY_VIEWS + movieId + ":" + bucket;
+            Object value = redisTemplate.opsForValue().get(key);
+            prev3h += safeLong(value);
+        }
+
+        double currentRate = last3h / 3.0;
+        double previousRate = prev3h / 3.0;
+
+        if (previousRate <= 0.0) {
+            return currentRate;
+        }
+
+        return Math.max(0.0, currentRate - previousRate);
     }
     
     private Double getSocialScore(String movieId) {
@@ -91,5 +131,21 @@ public class TrendingService {
     private Double getCompletionRate(String movieId) {
         // Percentage of users who completed watching
         return 0.0; // Placeholder
+    }
+
+    private long safeLong(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+
+        try {
+            return Long.parseLong(value.toString());
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 }

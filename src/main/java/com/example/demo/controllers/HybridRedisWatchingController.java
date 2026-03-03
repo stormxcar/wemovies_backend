@@ -1,8 +1,11 @@
 package com.example.demo.controllers;
 
+import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.services.HybridWatchingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -19,21 +22,27 @@ public class HybridRedisWatchingController {
     @Autowired
     private HybridWatchingService hybridWatchingService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     /**
      * Bắt đầu xem phim (sử dụng Hybrid Storage)
      * POST /api/hybrid-watching/start
      */
     @PostMapping("/start")
-    public ResponseEntity<Map<String, Object>> startWatching(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> startWatching(
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
 
         try {
             // Extract parameters
-            String userId = (String) request.get("userId");
+            String requestUserId = (String) request.get("userId");
+            String userId = resolveUserId(requestUserId, authentication);
             String movieId = (String) request.get("movieId");
             String movieTitle = (String) request.get("movieTitle");
             Integer totalDuration = request.get("totalDuration") != null ?
-                ((Number) request.get("totalDuration")).intValue() : 7200;
+                ((Number) request.get("totalDuration")).intValue() : null;
 
             // Validate required parameters
             if (userId == null || userId.trim().isEmpty()) {
@@ -85,11 +94,14 @@ public class HybridRedisWatchingController {
      * POST /api/hybrid-watching/update-time
      */
     @PostMapping("/update-time")
-    public ResponseEntity<Map<String, Object>> updateCurrentTime(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> updateCurrentTime(
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            String userId = (String) request.get("userId");
+            String requestUserId = (String) request.get("userId");
+            String userId = resolveUserId(requestUserId, authentication);
             String movieId = (String) request.get("movieId");
             Integer currentTime = ((Number) request.get("currentTime")).intValue();
             Integer totalDuration = request.get("totalDuration") != null ? 
@@ -118,23 +130,7 @@ public class HybridRedisWatchingController {
             result.put("status", "SUCCESS");
             result.put("message", "✅ Cập nhật thời gian xem thành công!");
             result.put("currentTime", currentTime);
-            
-            // Debug: Log updateResult structure
-            System.out.println("🔧 DEBUG updateResult: " + updateResult);
-            
-            // Fix: Get percentage from progress object, not directly from updateResult
-            Map<String, Object> progressData = (Map<String, Object>) updateResult.get("progress");
-            System.out.println("🔧 DEBUG progressData: " + progressData);
-            
-            if (progressData != null) {
-                Object percentageObj = progressData.get("percentage");
-                System.out.println("🔧 DEBUG percentageObj: " + percentageObj + " (type: " + (percentageObj != null ? percentageObj.getClass() : "null") + ")");
-                result.put("percentage", percentageObj);
-            } else {
-                System.out.println("🔧 DEBUG progressData is NULL!");
-                result.put("percentage", null);
-            }
-            
+            result.put("percentage", updateResult.get("percentage"));
             result.put("timestamp", LocalDateTime.now().toString());
 
             return ResponseEntity.ok(result);
@@ -152,9 +148,12 @@ public class HybridRedisWatchingController {
      * GET /api/hybrid-watching/watching-list/{userId}
      */
     @GetMapping("/watching-list/{userId}")
-    public ResponseEntity<List<Map<String, Object>>> getWatchingList(@PathVariable String userId) {
+    public ResponseEntity<List<Map<String, Object>>> getWatchingList(
+            @PathVariable String userId,
+            Authentication authentication) {
         try {
-            List<Map<String, Object>> watchingList = hybridWatchingService.getWatchingList(userId);
+            String effectiveUserId = resolveUserId(userId, authentication);
+            List<Map<String, Object>> watchingList = hybridWatchingService.getWatchingList(effectiveUserId);
             return ResponseEntity.ok(watchingList);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Collections.emptyList());
@@ -168,12 +167,14 @@ public class HybridRedisWatchingController {
     @GetMapping("/resume/{userId}/{movieId}")
     public ResponseEntity<Map<String, Object>> getResumeTime(
             @PathVariable String userId, 
-            @PathVariable String movieId) {
+            @PathVariable String movieId,
+            Authentication authentication) {
         
         Map<String, Object> result = new HashMap<>();
 
         try {
-            Map<String, Object> watchingProgress = hybridWatchingService.getWatchingProgress(userId, movieId);
+            String effectiveUserId = resolveUserId(userId, authentication);
+            Map<String, Object> watchingProgress = hybridWatchingService.getWatchingProgress(effectiveUserId, movieId);
 
             if (watchingProgress == null) {
                 result.put("status", "ERROR");
@@ -205,11 +206,14 @@ public class HybridRedisWatchingController {
      * POST /api/hybrid-watching/complete
      */
     @PostMapping("/complete")
-    public ResponseEntity<Map<String, Object>> markCompleted(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> markCompleted(
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            String userId = (String) request.get("userId");
+            String requestUserId = (String) request.get("userId");
+            String userId = resolveUserId(requestUserId, authentication);
             String movieId = (String) request.get("movieId");
 
             if (userId == null || movieId == null) {
@@ -249,12 +253,14 @@ public class HybridRedisWatchingController {
     @DeleteMapping("/remove")
     public ResponseEntity<Map<String, Object>> removeWatching(
             @RequestParam String userId,
-            @RequestParam String movieId) {
+            @RequestParam String movieId,
+            Authentication authentication) {
 
         Map<String, Object> result = new HashMap<>();
 
         try {
-            boolean success = hybridWatchingService.removeWatching(userId, movieId);
+            String effectiveUserId = resolveUserId(userId, authentication);
+            boolean success = hybridWatchingService.removeWatching(effectiveUserId, movieId);
 
             if (success) {
                 result.put("status", "SUCCESS");
@@ -280,11 +286,14 @@ public class HybridRedisWatchingController {
      * GET /api/hybrid-watching/stats/{userId}
      */
     @GetMapping("/stats/{userId}")
-    public ResponseEntity<Map<String, Object>> getWatchingStats(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> getWatchingStats(
+            @PathVariable String userId,
+            Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            Map<String, Object> stats = hybridWatchingService.getWatchingStats(userId);
+            String effectiveUserId = resolveUserId(userId, authentication);
+            Map<String, Object> stats = hybridWatchingService.getWatchingStats(effectiveUserId);
 
             result.put("status", "SUCCESS");
             result.put("message", "✅ Lấy thống kê thành công!");
@@ -306,9 +315,12 @@ public class HybridRedisWatchingController {
      * POST /api/hybrid-watching/heartbeat
      */
     @PostMapping("/heartbeat")
-    public ResponseEntity<Map<String, Object>> sendHeartbeat(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> sendHeartbeat(
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
         try {
-            String userId = (String) request.get("userId");
+            String requestUserId = (String) request.get("userId");
+            String userId = resolveUserId(requestUserId, authentication);
             String movieId = (String) request.get("movieId");
             Integer currentTime = request.get("currentTime") != null ? 
                 ((Number) request.get("currentTime")).intValue() : null;
@@ -334,6 +346,22 @@ public class HybridRedisWatchingController {
             result.put("errorType", e.getClass().getSimpleName());
             return ResponseEntity.status(500).body(result);
         }
+    }
+
+    private String resolveUserId(String requestUserId, Authentication authentication) {
+        if (authentication != null
+            && authentication.isAuthenticated()
+            && !(authentication instanceof AnonymousAuthenticationToken)) {
+            String principalName = authentication.getName();
+            Optional<String> userIdFromPrincipal = userRepository.findByEmail(principalName)
+                .map(user -> user.getId().toString());
+
+            if (userIdFromPrincipal.isPresent()) {
+                return userIdFromPrincipal.get();
+            }
+        }
+
+        return requestUserId;
     }
 
     /**

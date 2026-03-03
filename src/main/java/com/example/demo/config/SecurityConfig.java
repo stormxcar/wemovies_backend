@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/countries/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/types/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reports/**").permitAll()
-                        .requestMatchers("/api/hybrid-watching/**").permitAll() // Unified Hybrid API (Redis + Database)
+                        .requestMatchers("/api/hybrid-watching/**").authenticated() // Require auth so userId is derived from JWT principal
                         .requestMatchers("/api/view-tracking/**").permitAll() // View tracking and real-time view count
                         .requestMatchers("/api/trending/**").permitAll() // Trending movies and hot content
                         .requestMatchers(PUBLIC_ROUTES).permitAll()
@@ -80,6 +80,7 @@ public class SecurityConfig {
                         // Protected routes with cookie consent check
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // Require auth for POST reviews
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/**").authenticated() // Require auth for DELETE reviews
+                        .requestMatchers("/api/notifications/**").authenticated() // Notifications REST API requires auth
                         .requestMatchers("/api/watchlist/**").authenticated() // Remove cookie consent for watchlist
                         .requestMatchers("/api/schedules/**").authenticated() // Remove cookie consent for schedules
                         .requestMatchers("/api/auth/profile", "/api/auth/upload-avatar", "/api/auth/change-password").authenticated() // Remove cookie consent for profile operations

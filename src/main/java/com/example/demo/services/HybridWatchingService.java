@@ -186,21 +186,34 @@ public class HybridWatchingService {
             LocalDateTime now = LocalDateTime.now();
             
             // 1. Lưu vào Database (persistent)
-            WatchingProgress progress = progressRepository.findByUserIdAndMovieId(userId, movieId)
-                .orElse(new WatchingProgress());
-            
+            Optional<WatchingProgress> existingProgress = progressRepository.findByUserIdAndMovieId(userId, movieId);
+            boolean isNewProgress = existingProgress.isEmpty();
+
+            WatchingProgress progress = existingProgress.orElse(new WatchingProgress());
+
             progress.setUserId(userId);
             progress.setMovieId(movieId);
-            progress.setMovieTitle(movieTitle);
-            progress.setTotalDuration(totalDuration);
-            progress.setCurrentTime(0);
-            progress.setPercentage(0.0);
-            progress.setIsCompleted(false);
-            progress.setLastWatched(now);
-            
+
+            if (movieTitle != null && !movieTitle.trim().isEmpty()) {
+                progress.setMovieTitle(movieTitle);
+            }
+
+            if (totalDuration != null) {
+                progress.setTotalDuration(totalDuration);
+            }
+
+            if (isNewProgress) {
+                progress.setCurrentTime(0);
+                progress.setPercentage(0.0);
+                progress.setIsCompleted(false);
+                progress.setStartedAt(now);
+            }
+
             if (progress.getStartedAt() == null) {
                 progress.setStartedAt(now);
             }
+
+            progress.setLastWatched(now);
             
             progressRepository.save(progress);
             
@@ -209,9 +222,11 @@ public class HybridWatchingService {
             
             // 3. Track movie start for analytics
             try {
-                // Track initial view when movie starts
-                viewTrackingService.trackView(userId, movieId, 0L, totalDuration.longValue());
-                System.out.println("✅ DEBUG: Start tracking completed for movieId=" + movieId);
+                Long durationForTracking = progress.getTotalDuration() != null ? progress.getTotalDuration().longValue() : null;
+                if (durationForTracking != null && durationForTracking > 0) {
+                    viewTrackingService.trackView(userId, movieId, 0L, durationForTracking);
+                    System.out.println("✅ DEBUG: Start tracking completed for movieId=" + movieId);
+                }
             } catch (Exception e) {
                 System.err.println("❌ Start tracking failed: " + e.getMessage());
             }
@@ -274,9 +289,14 @@ public class HybridWatchingService {
             
             // 4. Track view progress for analytics and auto-increment views
             try {
-                viewTrackingService.trackView(userId, movieId, currentTime.longValue(), 
-                    progress.getTotalDuration() != null ? progress.getTotalDuration().longValue() : totalDuration.longValue());
-                System.out.println("✅ DEBUG: ViewTracking completed for movieId=" + movieId + ", currentTime=" + currentTime);
+                Long effectiveDuration = progress.getTotalDuration() != null
+                    ? progress.getTotalDuration().longValue()
+                    : (totalDuration != null ? totalDuration.longValue() : null);
+
+                if (effectiveDuration != null && effectiveDuration > 0) {
+                    viewTrackingService.trackView(userId, movieId, currentTime.longValue(), effectiveDuration);
+                    System.out.println("✅ DEBUG: ViewTracking completed for movieId=" + movieId + ", currentTime=" + currentTime);
+                }
             } catch (Exception e) {
                 System.err.println("❌ ViewTracking failed: " + e.getMessage());
             }
