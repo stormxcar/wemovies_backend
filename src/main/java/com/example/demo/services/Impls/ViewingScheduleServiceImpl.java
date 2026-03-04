@@ -11,6 +11,7 @@ import com.example.demo.repositories.MovieRepository;
 import com.example.demo.repositories.ViewingScheduleRepository;
 import com.example.demo.repositories.auth.UserRepository;
 import com.example.demo.services.EmailService;
+import com.example.demo.services.NotificationService;
 import com.example.demo.services.ViewingScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,9 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
 
     @Autowired
     private AsyncEmailService asyncEmailService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     @Transactional
@@ -126,18 +130,20 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
     }
 
     @Override
+    @Transactional
     public void sendReminders() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime reminderTime = now.plusMinutes(30); // Send reminder 30 minutes before
+        LocalDateTime windowStart = now.minusMinutes(1);
+        LocalDateTime windowEnd = now.plusMinutes(1);
 
         List<ViewingSchedule> schedulesToRemind = viewingScheduleRepository
-                .findPendingReminders(reminderTime, ScheduleStatus.PENDING);
+                .findPendingReminders(windowStart, windowEnd, ScheduleStatus.PENDING);
 
         for (ViewingSchedule schedule : schedulesToRemind) {
             try {
                 String subject = "Nhắc nhở: Phim đã lên lịch xem";
                 String body = String.format(
-                    "Xin chào %s,\n\nĐây là lời nhắc nhở rằng bạn đã lên lịch xem phim '%s' vào lúc %s.\n\nGhi chú: %s\n\nChúc bạn xem phim vui vẻ!",
+                    "Xin chào %s,\n\nĐã đến giờ xem phim '%s' (%s).\n\nGhi chú: %s\n\nChúc bạn xem phim vui vẻ!",
                     schedule.getUser().getFullName(),
                     schedule.getMovie().getTitle(),
                     schedule.getScheduledDateTime(),
@@ -146,8 +152,19 @@ public class ViewingScheduleServiceImpl implements ViewingScheduleService {
 
                 asyncEmailService.sendEmailAsync(schedule.getUser().getEmail(), subject, body);
 
-                // Mark as completed or add a reminder sent flag if needed
-                // For now, we'll just send the email
+                notificationService.sendRealTimeNotification(
+                        schedule.getUser().getId().toString(),
+                        Notification.NotificationType.MOVIE_REMINDER,
+                        "⏰ Đến giờ xem phim",
+                        "Đã đến giờ xem '" + schedule.getMovie().getTitle() + "' như lịch bạn đã đặt.",
+                        "/movies/" + schedule.getMovie().getId(),
+                        schedule.getMovie(),
+                        java.util.Map.of("scheduleId", schedule.getId().toString())
+                );
+
+                // Tránh gửi nhắc lại liên tục mỗi phút
+                schedule.setReminderEnabled(false);
+                viewingScheduleRepository.save(schedule);
 
             } catch (Exception e) {
                 // Log error but continue with other reminders

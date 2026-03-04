@@ -176,19 +176,28 @@ public class HybridRedisWatchingController {
             String effectiveUserId = resolveUserId(userId, authentication);
             Map<String, Object> watchingProgress = hybridWatchingService.getWatchingProgress(effectiveUserId, movieId);
 
-            if (watchingProgress == null) {
+            if (watchingProgress == null || !"SUCCESS".equals(watchingProgress.get("status"))) {
                 result.put("status", "ERROR");
                 result.put("message", "❌ Không tìm thấy lịch sử xem phim!");
                 return ResponseEntity.status(404).body(result);
             }
 
+            @SuppressWarnings("unchecked")
+            Map<String, Object> progress = (Map<String, Object>) watchingProgress.get("progress");
+
+            if (progress == null) {
+                result.put("status", "ERROR");
+                result.put("message", "❌ Không tìm thấy dữ liệu tiến độ xem!");
+                return ResponseEntity.status(404).body(result);
+            }
+
             result.put("status", "SUCCESS");
             result.put("message", "✅ Tìm thấy vị trí tiếp tục xem!");
-            result.put("resumeTime", watchingProgress.get("currentTime"));
-            result.put("totalDuration", watchingProgress.get("totalDuration"));
-            result.put("percentage", watchingProgress.get("percentage"));
-            result.put("lastWatched", watchingProgress.get("lastWatched"));
-            result.put("movieTitle", watchingProgress.get("movieTitle"));
+            result.put("resumeTime", progress.get("currentTime"));
+            result.put("totalDuration", progress.get("totalDuration"));
+            result.put("percentage", progress.get("percentage"));
+            result.put("lastWatched", progress.get("lastWatched"));
+            result.put("movieTitle", progress.get("movieTitle"));
             result.put("timestamp", LocalDateTime.now().toString());
 
             return ResponseEntity.ok(result);

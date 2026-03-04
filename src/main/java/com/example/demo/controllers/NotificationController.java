@@ -314,14 +314,13 @@ public class NotificationController {
                 metadataMap
             );
             
-            Map<String, Object> responseData = Map.of(
-                "type", type,
-                "title", title,
-                "message", message,
-                "actionUrl", actionUrl,
-                "target", "ALL_USERS",
-                "timestamp", System.currentTimeMillis()
-            );
+            Map<String, Object> responseData = new java.util.HashMap<>();
+            responseData.put("type", type);
+            responseData.put("title", title);
+            responseData.put("message", message);
+            responseData.put("actionUrl", actionUrl);
+            responseData.put("target", "ALL_USERS");
+            responseData.put("timestamp", System.currentTimeMillis());
             
             return ResponseEntity.ok(new ApiResponse<>(true, "Broadcast notification sent to all users successfully", responseData));
         } catch (IllegalArgumentException e) {

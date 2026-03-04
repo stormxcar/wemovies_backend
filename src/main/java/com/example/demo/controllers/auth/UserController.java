@@ -7,10 +7,12 @@ import com.example.demo.services.Impls.CloudinaryService;
 import com.example.demo.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -78,6 +80,22 @@ public class UserController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(null);
         }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/create")
+    public ResponseEntity<User> createUserByAdmin(@RequestBody Map<String, Object> request) {
+        User createdUser = userService.createUserByAdmin(request);
+        return ResponseEntity.ok(createdUser);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/admin/{id}/lock")
+    public ResponseEntity<User> lockOrUnlockUser(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "true") boolean locked) {
+        User updatedUser = userService.setUserLockStatus(id, locked);
+        return ResponseEntity.ok(updatedUser);
     }
 
 }

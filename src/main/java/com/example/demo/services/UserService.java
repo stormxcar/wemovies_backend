@@ -4,6 +4,7 @@ import com.example.demo.dto.response.UserDTO;
 import com.example.demo.models.auth.User;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface UserService {
@@ -18,4 +19,8 @@ public interface UserService {
     UserDTO getUserById(UUID id);
 
     String getUserRoleById(UUID id);
+
+    User createUserByAdmin(Map<String, Object> request);
+
+    User setUserLockStatus(UUID id, boolean locked);
 }

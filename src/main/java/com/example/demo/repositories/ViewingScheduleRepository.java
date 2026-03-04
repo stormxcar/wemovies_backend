@@ -21,8 +21,14 @@ public interface ViewingScheduleRepository extends JpaRepository<ViewingSchedule
 
     List<ViewingSchedule> findByUserAndScheduledDateTimeBetween(User user, LocalDateTime start, LocalDateTime end);
 
-    @Query("SELECT vs FROM ViewingSchedule vs WHERE vs.scheduledDateTime <= :now AND vs.status = :status")
-    List<ViewingSchedule> findPendingReminders(@Param("now") LocalDateTime now, @Param("status") ScheduleStatus status);
+        @Query("SELECT vs FROM ViewingSchedule vs " +
+           "WHERE vs.scheduledDateTime BETWEEN :windowStart AND :windowEnd " +
+           "AND vs.status = :status " +
+           "AND vs.reminderEnabled = true")
+        List<ViewingSchedule> findPendingReminders(
+            @Param("windowStart") LocalDateTime windowStart,
+            @Param("windowEnd") LocalDateTime windowEnd,
+            @Param("status") ScheduleStatus status);
 
     boolean existsByUserAndMovieIdAndStatus(User user, UUID movieId, ScheduleStatus status);
     

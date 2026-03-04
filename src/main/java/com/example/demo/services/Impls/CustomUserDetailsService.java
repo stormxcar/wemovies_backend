@@ -26,11 +26,18 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
 
         Set<GrantedAuthority> authorities = new HashSet<>();
+        String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+        if (roleName != null && !roleName.isBlank()) {
+            authorities.add(new SimpleGrantedAuthority(roleName));
+            if (!roleName.startsWith("ROLE_")) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName));
+            }
+        }
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassWord(),
-                Collections.singleton(new SimpleGrantedAuthority(user.getRole().getRoleName()))
+            authorities
         );
     }
 }
