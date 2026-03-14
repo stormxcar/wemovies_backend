@@ -1,7 +1,6 @@
 package com.example.demo.controllers;
 
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.dto.response.MovieDto;
 import com.example.demo.models.*;
 import com.example.demo.services.Impls.CloudinaryService;
 import com.example.demo.services.CategoryService;
@@ -9,8 +8,11 @@ import com.example.demo.services.CountryService;
 import com.example.demo.services.MovieService;
 import com.example.demo.services.MovieTypeSevice;
 import com.example.demo.services.NotificationService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +20,22 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 @RestController
 @RequestMapping("/api/movies")
 public class MovieController {
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "createdAt", "updatedAt", "title", "release_year", "views", "duration", "hot"
+    );
+
     @Autowired
     private MovieService movieService;
 
@@ -46,13 +55,20 @@ public class MovieController {
     private NotificationService notificationService;
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<List<Movie>>> movies() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> movies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            List<Movie> movies = movieService.getAllMovies();
-            if (movies.isEmpty()) {
+            Pageable pageable = buildPageable(page, size, sortBy, sortDir);
+            Page<Movie> moviePage = movieService.getAllMovies(pageable);
+            if (moviePage.isEmpty()) {
                 return new ResponseEntity<>(new ApiResponse<>(true, "No movies found", null), HttpStatus.NO_CONTENT);
             }
-            return ResponseEntity.ok(new ApiResponse<>(true, "Movies retrieved successfully", movies));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Movies retrieved successfully", toPagedPayload(moviePage)));
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(new ApiResponse<>(false, e.getMessage(), null), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving movies", null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -87,13 +103,13 @@ public class MovieController {
     @GetMapping("/addPage")
     public ResponseEntity<ApiResponse<Object>> addPage() {
         try {
-            Object response = new Object() {
-                public List<Movie> movies = movieService.getAllMovies();
-                public long countMovie = movieService.countMovies();
-                public List<Category> categories = categoryService.getAllCategory();
-                public List<MovieType> types = movieTypeSevice.getAllMovieTypes();
-                public List<Country> countries = countryService.getAllCountries();
-            };
+            Page<Movie> moviePage = movieService.getAllMovies(PageRequest.of(0, 20));
+            Map<String, Object> response = new HashMap<>();
+            response.put("movies", moviePage.getContent());
+            response.put("countMovie", movieService.countMovies());
+            response.put("categories", categoryService.getAllCategory());
+            response.put("types", movieTypeSevice.getAllMovieTypes());
+            response.put("countries", countryService.getAllCountries());
             return ResponseEntity.ok(new ApiResponse<>(true, "Page data retrieved successfully", response));
         } catch (Exception e) {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving page data", null), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -128,32 +144,17 @@ public class MovieController {
             // Create Movie object from parameters
             Movie movie = new Movie();
             movie.setTitle(title);
-            // Handle thumbnail upload
-            String finalThumbUrl = null;
+            // Upload thumbnail + banner concurrently to reduce API latency
+            String finalThumbUrl;
+            String finalBannerUrl;
             try {
-                if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-                    // Upload file to Cloudinary
-                    finalThumbUrl = cloudinaryService.uploadFile(thumbnailFile);
-                } else if (thumbUrl != null && !thumbUrl.trim().isEmpty()) {
-                    // Upload URL to Cloudinary
-                    finalThumbUrl = cloudinaryService.uploadFromUrl(thumbUrl);
-                }
-            } catch (Exception e) {
-                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload thumbnail: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-
-            // Handle banner upload
-            String finalBannerUrl = null;
-            try {
-                if (bannerFile != null && !bannerFile.isEmpty()) {
-                    // Upload file to Cloudinary
-                    finalBannerUrl = cloudinaryService.uploadFile(bannerFile);
-                } else if (bannerUrl != null && !bannerUrl.trim().isEmpty()) {
-                    // Upload URL to Cloudinary
-                    finalBannerUrl = cloudinaryService.uploadFromUrl(bannerUrl);
-                }
-            } catch (Exception e) {
-                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload banner: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+                CompletableFuture<String> thumbFuture = resolveMediaAsync(thumbnailFile, thumbUrl, null, "thumbnail");
+                CompletableFuture<String> bannerFuture = resolveMediaAsync(bannerFile, bannerUrl, null, "banner");
+                finalThumbUrl = thumbFuture.join();
+                finalBannerUrl = bannerFuture.join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                return new ResponseEntity<>(new ApiResponse<>(false, cause.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             movie.setDescription(description);
@@ -334,31 +335,26 @@ public class MovieController {
             }
 
             // Handle thumbnail upload
-            String finalThumbUrl = existingMovie.getThumb_url(); // Keep existing if no new upload
+            String finalThumbUrl;
+            String finalBannerUrl;
             try {
-                if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-                    // Upload file to Cloudinary
-                    finalThumbUrl = cloudinaryService.uploadFile(thumbnailFile);
-                } else if (thumbUrl != null && !thumbUrl.trim().isEmpty() && !thumbUrl.equals(existingMovie.getThumb_url())) {
-                    // Upload URL to Cloudinary only if it's different from current
-                    finalThumbUrl = cloudinaryService.uploadFromUrl(thumbUrl);
-                }
-            } catch (Exception e) {
-                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload thumbnail: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-
-            // Handle banner upload
-            String finalBannerUrl = existingMovie.getBanner_url(); // Keep existing if no new upload
-            try {
-                if (bannerFile != null && !bannerFile.isEmpty()) {
-                    // Upload file to Cloudinary
-                    finalBannerUrl = cloudinaryService.uploadFile(bannerFile);
-                } else if (bannerUrl != null && !bannerUrl.trim().isEmpty() && !bannerUrl.equals(existingMovie.getBanner_url())) {
-                    // Upload URL to Cloudinary only if it's different from current
-                    finalBannerUrl = cloudinaryService.uploadFromUrl(bannerUrl);
-                }
-            } catch (Exception e) {
-                return new ResponseEntity<>(new ApiResponse<>(false, "Failed to upload banner: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
+                CompletableFuture<String> thumbFuture = resolveMediaAsync(
+                        thumbnailFile,
+                        thumbUrl,
+                        existingMovie.getThumb_url(),
+                        "thumbnail"
+                );
+                CompletableFuture<String> bannerFuture = resolveMediaAsync(
+                        bannerFile,
+                        bannerUrl,
+                        existingMovie.getBanner_url(),
+                        "banner"
+                );
+                finalThumbUrl = thumbFuture.join();
+                finalBannerUrl = bannerFuture.join();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                return new ResponseEntity<>(new ApiResponse<>(false, cause.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             // Update fields
@@ -464,5 +460,51 @@ public class MovieController {
         } catch (Exception e) {
             return new ResponseEntity<>(new ApiResponse<>(false, "An error occurred while retrieving movie details", null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private Map<String, Object> toPagedPayload(Page<Movie> page) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("items", page.getContent());
+        payload.put("page", page.getNumber());
+        payload.put("size", page.getSize());
+        payload.put("totalItems", page.getTotalElements());
+        payload.put("totalPages", page.getTotalPages());
+        payload.put("hasNext", page.hasNext());
+        payload.put("hasPrevious", page.hasPrevious());
+        return payload;
+    }
+
+    private Pageable buildPageable(int page, int size, String sortBy, String sortDir) {
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String safeSortBy = (sortBy == null || sortBy.isBlank()) ? "createdAt" : sortBy;
+
+        if (!ALLOWED_SORT_FIELDS.contains(safeSortBy)) {
+            throw new IllegalArgumentException("Invalid sortBy. Allowed values: " + ALLOWED_SORT_FIELDS);
+        }
+
+        return PageRequest.of(Math.max(page, 0), Math.max(size, 1), Sort.by(direction, safeSortBy));
+    }
+
+    private CompletableFuture<String> resolveMediaAsync(MultipartFile file, String mediaUrl, String existingUrl, String mediaType) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (file != null && !file.isEmpty()) {
+                    return cloudinaryService.uploadFile(file);
+                }
+
+                if (mediaUrl == null || mediaUrl.trim().isEmpty() || mediaUrl.equals(existingUrl)) {
+                    return existingUrl;
+                }
+
+                // Skip re-upload when URL is already hosted by Cloudinary
+                if (mediaUrl.contains("res.cloudinary.com")) {
+                    return mediaUrl;
+                }
+
+                return cloudinaryService.uploadFromUrl(mediaUrl);
+            } catch (Exception e) {
+                throw new CompletionException(new RuntimeException("Failed to upload " + mediaType + ": " + e.getMessage(), e));
+            }
+        });
     }
 }

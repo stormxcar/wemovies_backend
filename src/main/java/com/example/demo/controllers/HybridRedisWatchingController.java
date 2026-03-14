@@ -41,6 +41,7 @@ public class HybridRedisWatchingController {
             String userId = resolveUserId(requestUserId, authentication);
             String movieId = (String) request.get("movieId");
             String movieTitle = (String) request.get("movieTitle");
+            String movieThumbnail = (String) request.get("movieThumbnail");
             Integer totalDuration = request.get("totalDuration") != null ?
                 ((Number) request.get("totalDuration")).intValue() : null;
 
@@ -68,6 +69,7 @@ public class HybridRedisWatchingController {
                 userId, 
                 movieId, 
                 movieTitle, 
+                movieThumbnail,
                 totalDuration
             );
 
@@ -198,6 +200,7 @@ public class HybridRedisWatchingController {
             result.put("percentage", progress.get("percentage"));
             result.put("lastWatched", progress.get("lastWatched"));
             result.put("movieTitle", progress.get("movieTitle"));
+            result.put("movieThumbnail", progress.get("movieThumbnail"));
             result.put("timestamp", LocalDateTime.now().toString());
 
             return ResponseEntity.ok(result);

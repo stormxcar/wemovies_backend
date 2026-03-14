@@ -48,6 +48,7 @@ public class RedisWatchingController {
             String userId = (String) request.get("userId");
             String movieId = (String) request.get("movieId");
             String movieTitle = (String) request.get("movieTitle");
+            String movieThumbnail = (String) request.get("movieThumbnail");
             Integer totalDuration = request.get("totalDuration") != null ?
                 ((Number) request.get("totalDuration")).intValue() : 7200;
 
@@ -76,6 +77,7 @@ public class RedisWatchingController {
                 Integer.parseInt(userId), 
                 Integer.parseInt(movieId), 
                 movieTitle, 
+                movieThumbnail,
                 totalDuration
             );
 

@@ -22,6 +22,7 @@ public class WatchProgressResponse {
     private UUID id;
     private UUID movieId;
     private String movieTitle;
+    private String movieThumbnail;
     private Integer currentTime;
     private Integer totalDuration;
     private Double watchPercentage;

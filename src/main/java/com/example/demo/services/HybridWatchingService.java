@@ -41,7 +41,11 @@ public class HybridWatchingService {
 
     // Overloaded methods for better controller integration
     public Map<String, Object> startWatching(Integer userId, Integer movieId, String movieTitle, Integer totalDuration) {
-        return startWatching(userId.toString(), movieId.toString(), movieTitle, totalDuration);
+        return startWatching(userId.toString(), movieId.toString(), movieTitle, null, totalDuration);
+    }
+
+    public Map<String, Object> startWatching(Integer userId, Integer movieId, String movieTitle, String movieThumbnail, Integer totalDuration) {
+        return startWatching(userId.toString(), movieId.toString(), movieTitle, movieThumbnail, totalDuration);
     }
 
     public Map<String, Object> updateProgress(Integer userId, Integer movieId, Integer currentTime, Integer totalDuration) {
@@ -180,6 +184,10 @@ public class HybridWatchingService {
      * Bắt đầu xem phim - lưu cả Redis và Database
      */
     public Map<String, Object> startWatching(String userId, String movieId, String movieTitle, Integer totalDuration) {
+        return startWatching(userId, movieId, movieTitle, null, totalDuration);
+    }
+
+    public Map<String, Object> startWatching(String userId, String movieId, String movieTitle, String movieThumbnail, Integer totalDuration) {
         Map<String, Object> result = new HashMap<>();
         
         try {
@@ -196,6 +204,10 @@ public class HybridWatchingService {
 
             if (movieTitle != null && !movieTitle.trim().isEmpty()) {
                 progress.setMovieTitle(movieTitle);
+            }
+
+            if (movieThumbnail != null && !movieThumbnail.trim().isEmpty()) {
+                progress.setMovieThumbnail(movieThumbnail);
             }
 
             if (totalDuration != null) {
@@ -572,6 +584,7 @@ public class HybridWatchingService {
         detailData.put("id", progress.getId() != null ? progress.getId().toString() : null);
             detailData.put("movieId", progress.getMovieId());
             detailData.put("movieTitle", progress.getMovieTitle());
+            detailData.put("movieThumbnail", progress.getMovieThumbnail());
             detailData.put("currentTime", progress.getCurrentTime());
             detailData.put("totalDuration", progress.getTotalDuration());
             detailData.put("percentage", progress.getPercentage());
@@ -650,6 +663,7 @@ public class HybridWatchingService {
         Map<String, Object> result = new HashMap<>();
         result.put("movieId", progress.getMovieId());
         result.put("movieTitle", progress.getMovieTitle());
+        result.put("movieThumbnail", progress.getMovieThumbnail());
         result.put("currentTime", progress.getCurrentTime());
         result.put("totalDuration", progress.getTotalDuration());
         result.put("percentage", progress.getPercentage());
@@ -679,6 +693,7 @@ public class HybridWatchingService {
         progress.setUserId(userId);
         progress.setMovieId(movieId);
         progress.setMovieTitle((String) redisData.get("movieTitle"));
+        progress.setMovieThumbnail((String) redisData.get("movieThumbnail"));
         
         // Safe type conversion for numbers
         try {

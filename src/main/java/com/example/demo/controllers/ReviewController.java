@@ -40,6 +40,28 @@ public class ReviewController {
         }
     }
 
+    @PostMapping("/{reviewId}/reply")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> replyToReview(@PathVariable String reviewId,
+                                                @RequestParam String comment,
+                                                Principal principal) {
+        try {
+            if (principal == null || principal.getName() == null) {
+                return ResponseEntity.status(401).body("Authentication required");
+            }
+
+            String email = principal.getName();
+            if (email.trim().isEmpty()) {
+                return ResponseEntity.status(401).body("Invalid authentication");
+            }
+
+            reviewService.replyToReview(email, reviewId, comment);
+            return ResponseEntity.ok("Reply added successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @DeleteMapping("/{movieId}/review")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteReview(@PathVariable String movieId, Principal principal) {

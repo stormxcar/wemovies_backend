@@ -31,6 +31,9 @@ public class WatchingProgress {
     
     @Column(name = "movie_title")
     private String movieTitle;
+
+    @Column(name = "movie_thumbnail")
+    private String movieThumbnail;
     
     @Column(name = "current_time_seconds", nullable = false)
     private Integer currentTime = 0;

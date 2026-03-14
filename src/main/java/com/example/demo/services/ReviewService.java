@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface ReviewService {
     void addOrUpdateReview(String email, String movieId, Integer rating, String comment);
+    void replyToReview(String email, String parentReviewId, String comment);
     void deleteReview(String email, String movieId);
     List<Review> getReviewsByMovie(String movieId);
     double getAverageRating(String movieId);

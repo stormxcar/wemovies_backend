@@ -4,9 +4,11 @@ import com.example.demo.enums.ScheduleStatus;
 import com.example.demo.models.ViewingSchedule;
 import com.example.demo.models.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,4 +35,9 @@ public interface ViewingScheduleRepository extends JpaRepository<ViewingSchedule
     boolean existsByUserAndMovieIdAndStatus(User user, UUID movieId, ScheduleStatus status);
     
     java.util.Optional<ViewingSchedule> findByUserAndMovieIdAndStatus(User user, UUID movieId, ScheduleStatus status);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM ViewingSchedule vs WHERE vs.movie.id = :movieId")
+    void deleteByMovieId(@Param("movieId") UUID movieId);
 }

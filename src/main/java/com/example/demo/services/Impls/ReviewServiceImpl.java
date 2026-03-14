@@ -49,7 +49,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new RuntimeException("Rating must be between 1 and 5");
         }
 
-        Optional<Review> existingReview = reviewRepository.findByUserAndMovie(user, movie);
+        Optional<Review> existingReview = reviewRepository.findByUserAndMovieAndParentReviewIsNull(user, movie);
         if (existingReview.isPresent()) {
             Review review = existingReview.get();
             review.setRating(rating);
@@ -63,6 +63,43 @@ public class ReviewServiceImpl implements ReviewService {
             review.setComment(comment);
             reviewRepository.save(review);
         }
+    }
+
+    @Override
+    public void replyToReview(String email, String parentReviewId, String comment) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("User email is required");
+        }
+
+        if (comment == null || comment.trim().isEmpty()) {
+            throw new RuntimeException("Reply comment is required");
+        }
+
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        UUID parentId;
+        try {
+            parentId = UUID.fromString(parentReviewId);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid parent review ID format: " + parentReviewId);
+        }
+
+        Review parentReview = reviewRepository.findById(parentId)
+                .orElseThrow(() -> new RuntimeException("Parent review not found"));
+
+        // Only allow one-level reply
+        if (parentReview.getParentReview() != null) {
+            throw new RuntimeException("Only one-level reply is supported");
+        }
+
+        Review reply = new Review();
+        reply.setUser(user);
+        reply.setMovie(parentReview.getMovie());
+        reply.setRating(parentReview.getRating());
+        reply.setComment(comment.trim());
+        reply.setParentReview(parentReview);
+        reviewRepository.save(reply);
     }
 
     @Override
@@ -84,7 +121,7 @@ public class ReviewServiceImpl implements ReviewService {
         Movie movie = movieRepository.findById(movieUUID)
                 .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + movieId));
 
-        Review review = reviewRepository.findByUserAndMovie(user, movie)
+        Review review = reviewRepository.findByUserAndMovieAndParentReviewIsNull(user, movie)
                 .orElseThrow(() -> new RuntimeException("Review not found for this user and movie"));
         reviewRepository.delete(review);
     }
@@ -97,7 +134,7 @@ public class ReviewServiceImpl implements ReviewService {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid movie ID format: " + movieId);
         }
-        return reviewRepository.findByMovieId(movieUUID);
+        return reviewRepository.findByMovieIdAndParentReviewIsNullOrderByCreatedAtDesc(movieUUID);
     }
 
     @Override
@@ -108,7 +145,7 @@ public class ReviewServiceImpl implements ReviewService {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid movie ID format: " + movieId);
         }
-        List<Review> reviews = reviewRepository.findByMovieId(movieUUID);
+        List<Review> reviews = reviewRepository.findByMovieIdAndParentReviewIsNullOrderByCreatedAtDesc(movieUUID);
         if (reviews.isEmpty()) return 0.0;
         return reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
     }

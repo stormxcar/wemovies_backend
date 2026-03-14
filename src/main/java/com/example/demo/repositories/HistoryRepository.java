@@ -5,9 +5,11 @@ import java.util.List;
 import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.models.History;
 import com.example.demo.models.Movie;
@@ -37,4 +39,9 @@ public interface HistoryRepository extends JpaRepository<History, UUID> {
     // Tổng lượt xem trong khoảng thời gian
     @Query("SELECT COUNT(h) FROM History h WHERE h.viewedAt BETWEEN :start AND :end")
     long countViewsBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM History h WHERE h.movie.id = :movieId")
+    void deleteByMovieId(@Param("movieId") UUID movieId);
 }

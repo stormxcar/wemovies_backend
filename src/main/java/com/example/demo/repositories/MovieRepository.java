@@ -29,6 +29,9 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
     @Query("SELECT m FROM Movie m JOIN m.movieCategories c WHERE c.name = :categoryName")
     List<Movie> getMoviesByCategory(@Param("categoryName") String categoryName);
 
+        @Query("SELECT m FROM Movie m JOIN m.movieCategories c WHERE c.name = :categoryName")
+        Page<Movie> getMoviesByCategory(@Param("categoryName") String categoryName, Pageable pageable);
+
     // delete film by id
     @Modifying
     @Transactional
@@ -39,8 +42,14 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
     @Query("SELECT m FROM Movie m WHERE m.title LIKE %:keyword%")
     List<Movie> searchMovie(@Param("keyword") String keyword);
 
+        @Query("SELECT m FROM Movie m WHERE m.title LIKE %:keyword%")
+        Page<Movie> searchMovie(@Param("keyword") String keyword, Pageable pageable);
+
     @Query("SELECT m FROM Movie m WHERE m.hot = :isHot")
     List<Movie> getMovieByHot(@Param("isHot") boolean isHot);
+
+        @Query("SELECT m FROM Movie m WHERE m.hot = :isHot")
+        Page<Movie> getMovieByHot(@Param("isHot") boolean isHot, Pageable pageable);
 
 
     @Query(value = "SELECT m.* FROM movie AS m " +
@@ -50,9 +59,29 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
     List<Movie> getMoviesByCategoryId(@Param("categoryId") UUID categoryId);
 
     @Query(value = "SELECT m.* FROM movie AS m " +
+            "JOIN movie_category AS mc ON mc.movie_id=m.id " +
+            "JOIN category AS c ON c.id = mc.category_id " +
+            "WHERE mc.category_id =:categoryId",
+            countQuery = "SELECT COUNT(*) FROM movie AS m " +
+                    "JOIN movie_category AS mc ON mc.movie_id=m.id " +
+                    "JOIN category AS c ON c.id = mc.category_id " +
+                    "WHERE mc.category_id =:categoryId",
+            nativeQuery = true)
+    Page<Movie> getMoviesByCategoryId(@Param("categoryId") UUID categoryId, Pageable pageable);
+
+    @Query(value = "SELECT m.* FROM movie AS m " +
             "JOIN country AS co ON co.id = m.country_id " +
             "WHERE co.id = :countryId", nativeQuery = true)
     List<Movie> getMoviesByCountryId(@Param("countryId") UUID countryId);
+
+    @Query(value = "SELECT m.* FROM movie AS m " +
+            "JOIN country AS co ON co.id = m.country_id " +
+            "WHERE co.id = :countryId",
+            countQuery = "SELECT COUNT(*) FROM movie AS m " +
+                    "JOIN country AS co ON co.id = m.country_id " +
+                    "WHERE co.id = :countryId",
+            nativeQuery = true)
+    Page<Movie> getMoviesByCountryId(@Param("countryId") UUID countryId, Pageable pageable);
 
     // MovieRepository.java
     @Query(value = "SELECT m.* FROM movie AS m " +
@@ -61,11 +90,32 @@ public interface MovieRepository extends JpaRepository<Movie, UUID> {
             "JOIN country AS co ON co.id = m.country_id " +
             "WHERE co.name = :countryName AND c.name = :categoryName", nativeQuery = true)
     List<Movie> findMoviesByCountryAndCategory(@Param("countryName") String countryName, @Param("categoryName") String categoryName);
+
+    @Query(value = "SELECT m.* FROM movie AS m " +
+            "JOIN movie_category AS mc ON mc.movie_id = m.id " +
+            "JOIN category AS c ON c.id = mc.category_id " +
+            "JOIN country AS co ON co.id = m.country_id " +
+            "WHERE co.name = :countryName AND c.name = :categoryName",
+            countQuery = "SELECT COUNT(*) FROM movie AS m " +
+                    "JOIN movie_category AS mc ON mc.movie_id = m.id " +
+                    "JOIN category AS c ON c.id = mc.category_id " +
+                    "JOIN country AS co ON co.id = m.country_id " +
+                    "WHERE co.name = :countryName AND c.name = :categoryName",
+            nativeQuery = true)
+    Page<Movie> findMoviesByCountryAndCategory(@Param("countryName") String countryName,
+                                               @Param("categoryName") String categoryName,
+                                               Pageable pageable);
     
     @Query("SELECT m FROM Movie m JOIN m.movieTypes mt WHERE mt.name = :movieTypeName")
     List<Movie> getMoviesByMovieType(@Param("movieTypeName") String movieTypeName);
+
+        @Query("SELECT m FROM Movie m JOIN m.movieTypes mt WHERE mt.name = :movieTypeName")
+        Page<Movie> getMoviesByMovieType(@Param("movieTypeName") String movieTypeName, Pageable pageable);
     
     @Query("SELECT m FROM Movie m JOIN m.movieTypes mt WHERE mt.id = :movieTypeId")
     List<Movie> getMoviesByMovieTypeId(@Param("movieTypeId") UUID movieTypeId);
+
+        @Query("SELECT m FROM Movie m JOIN m.movieTypes mt WHERE mt.id = :movieTypeId")
+        Page<Movie> getMoviesByMovieTypeId(@Param("movieTypeId") UUID movieTypeId, Pageable pageable);
 
 }
