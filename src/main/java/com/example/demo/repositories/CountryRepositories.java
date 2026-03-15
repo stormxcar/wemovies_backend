@@ -16,4 +16,6 @@ public interface CountryRepositories extends JpaRepository<Country, UUID> {
     int countMoviesByCountryId(@Param("countryId") UUID countryId);
     
     Country findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
 }

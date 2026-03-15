@@ -42,8 +42,18 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category saveCategory(Category category) {
-        // Generate slug if not set
-        if (category.getSlug() == null || category.getSlug().trim().isEmpty()) {
+        Category existing = null;
+        if (category.getId() != null) {
+            existing = categoryRepository.findById(category.getId()).orElse(null);
+        }
+
+        // Generate slug for create or when name changed in update
+        boolean isNew = existing == null;
+        boolean nameChanged = existing != null && existing.getName() != null
+                && category.getName() != null
+                && !existing.getName().equals(category.getName());
+
+        if (isNew || nameChanged || category.getSlug() == null || category.getSlug().trim().isEmpty()) {
             slugService.generateCategorySlug(category);
         }
         return categoryRepository.save(category); // Lưu Category

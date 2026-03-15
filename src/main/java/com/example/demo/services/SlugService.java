@@ -1,9 +1,11 @@
 package com.example.demo.services;
 
 import com.example.demo.models.Category;
+import com.example.demo.models.Country;
 import com.example.demo.models.Movie;
 import com.example.demo.models.MovieType;
 import com.example.demo.repositories.CategoryRepository;
+import com.example.demo.repositories.CountryRepositories;
 import com.example.demo.repositories.MovieRepository;
 import com.example.demo.repositories.MovieTypeRepository;
 import com.example.demo.utils.SlugUtil;
@@ -21,6 +23,9 @@ public class SlugService {
 
     @Autowired
     private MovieTypeRepository movieTypeRepository;
+
+    @Autowired
+    private CountryRepositories countryRepositories;
 
     /**
      * Generate and set slug for Movie
@@ -52,6 +57,17 @@ public class SlugService {
             String baseSlug = SlugUtil.generateSlug(movieType.getName());
             String uniqueSlug = SlugUtil.generateUniqueSlug(baseSlug, movieTypeRepository::existsBySlug);
             movieType.setSlug(uniqueSlug);
+        }
+    }
+
+    /**
+     * Generate and set slug for Country
+     */
+    public void generateCountrySlug(Country country) {
+        if (country.getName() != null && !country.getName().trim().isEmpty()) {
+            String baseSlug = SlugUtil.generateSlug(country.getName());
+            String uniqueSlug = SlugUtil.generateUniqueSlug(baseSlug, countryRepositories::existsBySlug);
+            country.setSlug(uniqueSlug);
         }
     }
 }

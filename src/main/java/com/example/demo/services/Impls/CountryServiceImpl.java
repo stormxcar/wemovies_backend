@@ -3,6 +3,7 @@ package com.example.demo.services.Impls;
 import com.example.demo.models.Country;
 import com.example.demo.repositories.CountryRepositories;
 import com.example.demo.services.CountryService;
+import com.example.demo.services.SlugService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,9 @@ import java.util.UUID;
 public class CountryServiceImpl implements CountryService {
     @Autowired
     private CountryRepositories countryRepositories;
+
+    @Autowired
+    private SlugService slugService;
     @Override
     public List<Country> getAllCountries() {
         return countryRepositories.findAll();
@@ -30,6 +34,20 @@ public class CountryServiceImpl implements CountryService {
 
     @Override
     public Country saveCountry(Country country) {
+        Country existing = null;
+        if (country.getId() != null) {
+            existing = countryRepositories.findById(country.getId()).orElse(null);
+        }
+
+        boolean isNew = existing == null;
+        boolean nameChanged = existing != null && existing.getName() != null
+                && country.getName() != null
+                && !existing.getName().equals(country.getName());
+
+        if (isNew || nameChanged || country.getSlug() == null || country.getSlug().trim().isEmpty()) {
+            slugService.generateCountrySlug(country);
+        }
+
         return countryRepositories.save(country);
     }
 

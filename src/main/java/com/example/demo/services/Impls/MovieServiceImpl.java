@@ -75,8 +75,18 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public Movie saveMovie(Movie movie) {
-        // Generate slug if not set
-        if (movie.getSlug() == null || movie.getSlug().trim().isEmpty()) {
+        Movie existing = null;
+        if (movie.getId() != null) {
+            existing = movieRepository.findById(movie.getId()).orElse(null);
+        }
+
+        boolean isNew = existing == null;
+        boolean titleChanged = existing != null && existing.getTitle() != null
+                && movie.getTitle() != null
+                && !existing.getTitle().equals(movie.getTitle());
+
+        // Generate slug for create or when title changed in update
+        if (isNew || titleChanged || movie.getSlug() == null || movie.getSlug().trim().isEmpty()) {
             slugService.generateMovieSlug(movie);
         }
         return movieRepository.save(movie);

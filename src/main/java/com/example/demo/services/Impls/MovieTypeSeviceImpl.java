@@ -34,8 +34,17 @@ public class MovieTypeSeviceImpl implements MovieTypeSevice {
 
     @Override
     public MovieType saveMovieType(MovieType movieType) {
-        // Generate slug if not set
-        if (movieType.getSlug() == null || movieType.getSlug().trim().isEmpty()) {
+        MovieType existing = null;
+        if (movieType.getId() != null) {
+            existing = movieTypeRepository.findById(movieType.getId()).orElse(null);
+        }
+
+        boolean isNew = existing == null;
+        boolean nameChanged = existing != null && existing.getName() != null
+                && movieType.getName() != null
+                && !existing.getName().equals(movieType.getName());
+
+        if (isNew || nameChanged || movieType.getSlug() == null || movieType.getSlug().trim().isEmpty()) {
             slugService.generateMovieTypeSlug(movieType);
         }
         return movieTypeRepository.save(movieType);
